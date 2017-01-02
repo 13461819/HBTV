@@ -20,7 +20,7 @@ namespace WpfHealthBreezeTV
         private int downloadCompleteVideoCount = 0;
         public bool isCancled = false;
         private string path = string.Empty;
-        private WebClient webClient;
+        private Dictionary<string, WebClient> webClients = new Dictionary<string, WebClient>();
 
         public DownloadWindow(Dictionary<string, Video> videos, List<string> dnld_paths)
         {
@@ -140,12 +140,12 @@ namespace WpfHealthBreezeTV
                 code = s.Substring(s.LastIndexOf("/") + 1, s.LastIndexOf(".") - s.LastIndexOf("/") - 1);
                 if (!File.Exists(path + code + ".wvm"))
                 {
-                    using (webClient = new WebClient())
+                    using (webClients[code] = new WebClient())
                     {
                         Uri from = new Uri(s);
-                        webClient.DownloadProgressChanged += downloadProgressChanged(code);
-                        webClient.DownloadFileCompleted += downloadDataCompleted(code);
-                        webClient.DownloadFileAsync(from, path + code + ".wvm");
+                        webClients[code].DownloadProgressChanged += downloadProgressChanged(code);
+                        webClients[code].DownloadFileCompleted += downloadDataCompleted(code);
+                        webClients[code].DownloadFileAsync(from, path + code + ".wvm");
                     }
                 }
             }
@@ -197,9 +197,12 @@ namespace WpfHealthBreezeTV
             if (downloadCompleteVideoCount != videoCount)
             {
                 isCancled = true;
-                if (webClient.IsBusy)
+                foreach (KeyValuePair<string, WebClient> webClient in webClients)
                 {
-                    webClient.CancelAsync();
+                    if (webClient.Value.IsBusy)
+                    {
+                        webClient.Value.CancelAsync();
+                    }
                 }
             }
             Close();
