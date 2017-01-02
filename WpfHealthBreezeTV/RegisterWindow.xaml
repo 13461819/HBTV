@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WpfHealthBreezeTV"
         mc:Ignorable="d"
-        Title="회원가입 (관리자용)" Height="440" Width="500">
+        Title="회원가입 (관리자용)" Height="440" Width="500" ResizeMode="NoResize">
     <TabControl x:Name="tabControlRegister">
         <TabItem Height="0">
             <Grid>

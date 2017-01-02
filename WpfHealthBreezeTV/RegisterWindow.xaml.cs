@@ -147,9 +147,9 @@ namespace WpfHealthBreezeTV
             client.DefaultRequestHeaders.Accept.Add(
                 new MediaTypeWithQualityHeaderValue("application/json"));
 
-            HttpResponseMessage response = client.PutAsync("emr/register", content).Result;
             try
             {
+                HttpResponseMessage response = client.PutAsync("emr/register", content).Result;
                 //response.EnsureSuccessStatusCode();
 
                 string responseText = response.Content.ReadAsStringAsync().Result;
@@ -182,6 +182,12 @@ namespace WpfHealthBreezeTV
             catch (HttpRequestException he)
             {
                 MessageBox.Show("등록 실패\n" + he.Message, "로그인 실패");
+                buttonRegisterHospital.IsEnabled = true;
+                buttonRegisterHospital.Content = "등록";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\n네트워크 연결을 확인해주세요.(05)");
                 buttonRegisterHospital.IsEnabled = true;
                 buttonRegisterHospital.Content = "등록";
             }
@@ -229,9 +235,9 @@ namespace WpfHealthBreezeTV
                         System.Text.ASCIIEncoding.ASCII.GetBytes(
                             string.Format("{0}:{1}", emr_id, emr_api_key))));
 
-            HttpResponseMessage response = client.PutAsync("emr/" + emr_id + "/confirm", content).Result;
             try
             {
+                HttpResponseMessage response = client.PutAsync("emr/" + emr_id + "/confirm", content).Result;
                 //response.EnsureSuccessStatusCode();
 
                 string responseText = response.Content.ReadAsStringAsync().Result;
@@ -283,9 +289,15 @@ namespace WpfHealthBreezeTV
                     buttonRegisterHospital.Content = "등록";
                 }
             }
-            catch
+            catch (HttpRequestException he)
             {
-                MessageBox.Show("등록 실패", "로그인 실패");
+                MessageBox.Show("등록 실패\n" + he.Message, "로그인 실패");
+                buttonRegisterHospital.IsEnabled = true;
+                buttonRegisterHospital.Content = "등록";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\n네트워크 연결을 확인해주세요.(06)");
                 buttonRegisterHospital.IsEnabled = true;
                 buttonRegisterHospital.Content = "등록";
             }
@@ -317,9 +329,9 @@ namespace WpfHealthBreezeTV
                             System.Text.ASCIIEncoding.ASCII.GetBytes(
                                 string.Format("{0}:{1}", emr_id, emr_api_key))));
                 string managerOrUser = isManagerRegister ? "/register" : "/accounts";
-                HttpResponseMessage response = client.PostAsync("emr/" + emr_id + managerOrUser, content).Result;
                 try
                 {
+                    HttpResponseMessage response = client.PostAsync("emr/" + emr_id + managerOrUser, content).Result;
                     //response.EnsureSuccessStatusCode();
 
                     string responseText = response.Content.ReadAsStringAsync().Result;
@@ -394,6 +406,11 @@ namespace WpfHealthBreezeTV
                     buttonRequest.IsEnabled = true;
                     MessageBox.Show("회원가입 실패\n" + he.Message, "가입 실패");
                 }
+                catch (Exception ex)
+                {
+                    buttonRequest.IsEnabled = true;
+                    MessageBox.Show(ex.Message + "\n네트워크 연결을 확인해주세요.(07)");
+                }
             }
         }
 
@@ -456,9 +473,9 @@ namespace WpfHealthBreezeTV
                         System.Text.ASCIIEncoding.ASCII.GetBytes(
                             string.Format("{0}:{1}", emr_id, emr_api_key))));
 
-            HttpResponseMessage response = client.PostAsync("emr/request", content).Result;
             try
             {
+                HttpResponseMessage response = client.PostAsync("emr/request", content).Result;
                 //response.EnsureSuccessStatusCode();
                 string responseText = response.Content.ReadAsStringAsync().Result;
                 dynamic jo = JObject.Parse(responseText);
@@ -492,6 +509,10 @@ namespace WpfHealthBreezeTV
             catch (HttpRequestException he)
             {
                 MessageBox.Show("전화번호 인증 실패\n" + he.Message, "가입 실패");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\n네트워크 연결을 확인해주세요.(08)");
                 buttonRequest.IsEnabled = true;
             }
         }
@@ -519,9 +540,9 @@ namespace WpfHealthBreezeTV
                         System.Text.ASCIIEncoding.ASCII.GetBytes(
                             string.Format("{0}:{1}", emr_id, emr_api_key))));
 
-            HttpResponseMessage response = client.PutAsync("emr/request", content).Result;
             try
             {
+                HttpResponseMessage response = client.PutAsync("emr/request", content).Result;
                 response.EnsureSuccessStatusCode();
 
                 string responseText = response.Content.ReadAsStringAsync().Result;
@@ -537,8 +558,12 @@ namespace WpfHealthBreezeTV
             }
             catch (HttpRequestException he)
             {
-                buttonVerify.IsEnabled = true;
                 MessageBox.Show("buttonRequest_Click 실패\n" + he.Message, "가입 실패");
+            }
+            catch (Exception ex)
+            {
+                buttonVerify.IsEnabled = true;
+                MessageBox.Show(ex.Message + "\n네트워크 연결을 확인해주세요.(09)");
             }
         }
     }

@@ -41,7 +41,7 @@
             </TextBlock.ToolTip>
         </TextBlock>
         <TextBox x:Name="textBoxName" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Row="4" Grid.Column="1" Width="210" FontSize="15" KeyDown="textBox_KeyDown" Margin="5,3" Height="25"/>
-        <Button x:Name="buttonLogin" Content="Login" Click="buttonLogin_Click" Grid.Row="2" Grid.Column="2" Grid.RowSpan="3" Cursor="Hand" Margin="5,4,10,3" FontSize="18"/>
+        <Button x:Name="buttonLogin" Content="Login" Click="buttonLogin_Click" Grid.Row="2" Grid.Column="2" Grid.RowSpan="3" Cursor="Hand" Margin="5,4,10,3" FontSize="18" Background="#FFF0F0F0" BorderBrush="#FFACACAC"/>
         <TextBlock x:Name="textBlockSignUp" Text="회원가입 (관리자용)" Grid.Row="5" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#FF00C5F7" Cursor="Hand" MouseUp="textBlockSignUp_MouseUp" FontSize="14" Height="19" Margin="0"/>
     </Grid>
 </Window>

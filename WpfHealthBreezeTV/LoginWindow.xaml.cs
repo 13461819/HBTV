@@ -97,9 +97,9 @@ namespace WpfHealthBreezeTV
             client.DefaultRequestHeaders.Accept.Add(
                 new MediaTypeWithQualityHeaderValue("application/json"));
 
-            HttpResponseMessage response = client.PostAsync("tvapp/login", content).Result;
             try
             {
+                HttpResponseMessage response = client.PostAsync("tvapp/login", content).Result;
                 //response.EnsureSuccessStatusCode();
                 string responseText = response.Content.ReadAsStringAsync().Result;
                 dynamic jo = JObject.Parse(responseText);
@@ -139,6 +139,13 @@ namespace WpfHealthBreezeTV
             catch (HttpRequestException he)
             {
                 MessageBox.Show("로그인 에러\n" + he.Message, "로그인 실패");
+                buttonLogin.Content = "로그인";
+                buttonLogin.IsEnabled = true;
+                Mouse.OverrideCursor = null;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\n네트워크 연결을 확인해주세요.(01)", "로그인 실패");
                 buttonLogin.Content = "로그인";
                 buttonLogin.IsEnabled = true;
                 Mouse.OverrideCursor = null;

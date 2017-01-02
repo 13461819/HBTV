@@ -38,9 +38,11 @@ namespace WpfHealthBreezeTV
         public MainWindow()
         {
             InitializeComponent();
+            
             user = ApplicationState.GetValue<User>("currentUser");
             email = ApplicationState.GetValue<string>("email");
             initData();
+            
             //setRegUser(); 필요없음
         }
 
@@ -108,10 +110,10 @@ namespace WpfHealthBreezeTV
                         System.Text.ASCIIEncoding.ASCII.GetBytes(
                             string.Format("{0}-{1}:{2}", user.uid, user.did, user.sessionKey))));
 
-            HttpResponseMessage response = client.GetAsync("tvapp/videos").Result;
 
             try
             {
+                HttpResponseMessage response = client.GetAsync("tvapp/videos").Result;
                 string jsonStringVideos = response.Content.ReadAsStringAsync().Result;
 
                 if (response.StatusCode == HttpStatusCode.OK)
@@ -121,10 +123,11 @@ namespace WpfHealthBreezeTV
                     foreach (Video v in tempVideos)
                     {
                         videos.Add(v.id.ToString(), v);
+                        searchResult.Add(v.id.ToString());
                     }
                     ApplicationState.SetValue("videos", videos);
-
                     getChannelFromReg();
+                    refreshSearchResult();
                     refreshMyChannel();
                 }
                 else if (response.StatusCode == HttpStatusCode.BadRequest)
@@ -137,6 +140,11 @@ namespace WpfHealthBreezeTV
             catch (HttpRequestException he)
             {
                 MessageBox.Show("비디오 목록을 받아오지 못하였습니다.\n" + he.Message);
+                Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\n네트워크 연결을 확인해주세요.(02)");
                 Close();
             }
         }
@@ -712,9 +720,9 @@ namespace WpfHealthBreezeTV
                                 Convert.ToBase64String(
                                     System.Text.ASCIIEncoding.ASCII.GetBytes(
                                         string.Format("{0}-{1}:{2}", user.uid, user.did, user.sessionKey))));
-                        HttpResponseMessage response = client.PostAsync("api/v1/webdrm/downloads", content).Result;
                         try
                         {
+                            HttpResponseMessage response = client.PostAsync("api/v1/webdrm/downloads", content).Result;
                             //response.EnsureSuccessStatusCode();
                             string responseText = response.Content.ReadAsStringAsync().Result;
                             dynamic jo = JObject.Parse(responseText);
@@ -757,6 +765,10 @@ namespace WpfHealthBreezeTV
                         {
                             MessageBox.Show("api/v1/webdrm/downloads 실패\n" + he.Message, "실패");
                         }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show(ex.Message + "\n네트워크 연결을 확인해주세요.(03)");
+                        }
                         break;
                     default:
                         return;
@@ -783,9 +795,9 @@ namespace WpfHealthBreezeTV
                         Convert.ToBase64String(
                             System.Text.ASCIIEncoding.ASCII.GetBytes(
                                 string.Format("{0}-{1}:{2}", user.uid, user.did, user.sessionKey))));
-                HttpResponseMessage response = client.PostAsync("api/v1/webdrm/downloads", content).Result;
                 try
                 {
+                    HttpResponseMessage response = client.PostAsync("api/v1/webdrm/downloads", content).Result;
                     //response.EnsureSuccessStatusCode();
                     string responseText = response.Content.ReadAsStringAsync().Result;
                     dynamic jo = JObject.Parse(responseText);
@@ -875,6 +887,10 @@ namespace WpfHealthBreezeTV
                 catch (HttpRequestException he)
                 {
                     MessageBox.Show("api/v1/webdrm/downloads 실패\n" + he.Message, "실패");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message + "\n네트워크 연결을 확인해주세요.(04)");
                 }
             }
             else //비디오도 있고 재생권한도 있음

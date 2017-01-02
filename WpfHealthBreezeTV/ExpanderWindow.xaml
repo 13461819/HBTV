@@ -11,8 +11,8 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <Expander Header="질병증상">
-            <ListBox BorderThickness="0" SelectionMode="Multiple" FontSize="20">
+        <Expander Header="질병증상" FontSize="30">
+            <ListBox BorderThickness="0" SelectionMode="Multiple" FontSize="40">
                 <ListBoxItem>
                     aasdfaas
                 </ListBoxItem>
@@ -24,8 +24,8 @@
                 </ListBoxItem>
             </ListBox>
         </Expander>
-        <Expander Grid.Row="1" Header="진단적 술기">
-            <ListBox BorderThickness="0" SelectionMode="Multiple" FontSize="20">
+        <Expander Grid.Row="1" Header="진단적 술기" FontSize="30">
+            <ListBox BorderThickness="0" SelectionMode="Multiple" FontSize="40">
                 <ListBoxItem>
                     aasdfaas
                 </ListBoxItem>
