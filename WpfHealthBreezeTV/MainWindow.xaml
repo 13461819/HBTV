@@ -50,7 +50,11 @@
                 </ComboBox>
                 <Button x:Name="buttonAddChannel" Content="추가" Height="30
                         " HorizontalAlignment="Right" Margin="0,10,5,0" VerticalAlignment="Top" Width="85" Click="buttonAddChannel_Click" Cursor="Hand" FontSize="16" Background="#FFF0F0F0" BorderBrush="#FFACACAC"></Button>
-                <ListBox x:Name="listBoxSearch" Margin="5,55,5,5" ScrollViewer.HorizontalScrollBarVisibility="Disabled"  MouseUp="listBoxSearch_MouseUp" HorizontalContentAlignment="Stretch" SelectionMode="Multiple"/>
+                <ListBox x:Name="listBoxSearch" Margin="5,55,5,5" ScrollViewer.HorizontalScrollBarVisibility="Disabled"  MouseUp="listBoxSearch_MouseUp" HorizontalContentAlignment="Stretch" SelectionMode="Multiple">
+                    <ListBoxItem FontSize="20">
+                        Please Wait...
+                    </ListBoxItem>
+                </ListBox>
             </Grid>
         </TabItem>
         <TabItem KeyUp="TabItem_KeyUp">
@@ -82,11 +86,9 @@
                     <!--<Button x:Name="buttonRefresh" Margin="2.5, 0, 0, 0" Grid.Column="2" Content="새로고침" Click="buttonRefresh_Click" Height="35" Cursor="Hand"/>-->
                 </Grid>
                 <ListBox x:Name="listBoxChannel" Margin="5,55,5,5" ScrollViewer.HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch" SelectionMode="Multiple" MouseUp="listBoxChannel_MouseUp" >
-                    <!--<ListView.ItemContainerStyle>
-                        <Style TargetType="{x:Type ListViewItem}">
-                            <Setter Property="Focusable" Value="False" />
-                        </Style>
-                    </ListView.ItemContainerStyle>-->
+                    <ListBoxItem FontSize="20">
+                        Please Wait...
+                    </ListBoxItem>
                 </ListBox>
             </Grid>
         </TabItem>

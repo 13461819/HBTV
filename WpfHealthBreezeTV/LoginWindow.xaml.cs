@@ -11,6 +11,7 @@ using Newtonsoft.Json.Linq;
 using System.Windows.Input;
 using System.Net;
 using System.IO;
+using System.Threading;
 
 namespace WpfHealthBreezeTV
 {
@@ -56,9 +57,9 @@ namespace WpfHealthBreezeTV
                 regConfig = regHealthBreeze.CreateSubKey("config");
             }
 
-            if (regConfig.GetValue("email") != null)
+            if (regConfig.GetValue("last_email") != null)
             {
-                textBoxEmail.Text = regConfig.GetValue("email") as string;
+                textBoxEmail.Text = regConfig.GetValue("last_email") as string;
                 textBoxName.Text = getNameFromReg(textBoxEmail.Text);
                 passwordBoxPassword.Focus();
             }
@@ -96,29 +97,41 @@ namespace WpfHealthBreezeTV
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(
                 new MediaTypeWithQualityHeaderValue("application/json"));
-
+            
             try
             {
                 HttpResponseMessage response = client.PostAsync("tvapp/login", content).Result;
                 //response.EnsureSuccessStatusCode();
-                string responseText = response.Content.ReadAsStringAsync().Result;
-                dynamic jo = JObject.Parse(responseText);
-                if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                if (response.StatusCode == HttpStatusCode.OK)
                 {
-                    user = JsonConvert.DeserializeObject<User>(responseText);
-                    ApplicationState.SetValue("currentUser", user);
+                    // 이메일 데이터만 저장하고 바로 MainWindow 호출
                     ApplicationState.SetValue("email", textBoxEmail.Text);
-                    RegistryKey regConfig = Registry.CurrentUser.OpenSubKey(@"Software\HealthBreeze\config", true);
-                    regConfig.SetValue("email", textBoxEmail.Text);
-                    setNameToReg(textBoxEmail.Text, textBoxName.Text);
-                    downloadLogoVideo();
                     MainWindow mainWondow = new MainWindow();
                     mainWondow.Show();
+
+                    // MainWindow에서는 로드되고 난 후 나머지 데이터 기다림
                     Mouse.OverrideCursor = null;
+                    string responseText = response.Content.ReadAsStringAsync().Result;
+                    dynamic jo = JObject.Parse(responseText);
+                    user = JsonConvert.DeserializeObject<User>(responseText);
+                    ApplicationState.SetValue("currentUser", user);
+                    ApplicationState.SetValue("isDataStored", true);
+                    RegistryKey regConfig = Registry.CurrentUser.OpenSubKey(@"Software\HealthBreeze\config", true);
+                    regConfig.SetValue("last_email", textBoxEmail.Text);
+                    setNameToReg(textBoxEmail.Text, textBoxName.Text);
+
+                    // logo.wvm 파일 다운로드
+                    Thread downloadLogoVideoThread = new Thread(new ThreadStart(downloadLogoVideo));
+                    downloadLogoVideoThread.SetApartmentState(ApartmentState.STA);
+                    downloadLogoVideoThread.IsBackground = true;
+                    downloadLogoVideoThread.Start();
                     this.Close();
                 }
-                else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                else if (response.StatusCode == HttpStatusCode.BadRequest)
                 {
+                    Mouse.OverrideCursor = null;
+                    string responseText = response.Content.ReadAsStringAsync().Result;
+                    dynamic jo = JObject.Parse(responseText);
                     switch ((string)jo.code)
                     {
                         case "2004":
@@ -133,7 +146,6 @@ namespace WpfHealthBreezeTV
                     }
                     buttonLogin.Content = "로그인";
                     buttonLogin.IsEnabled = true;
-                    Mouse.OverrideCursor = null;
                 }
             }
             catch (HttpRequestException he)
@@ -200,7 +212,7 @@ namespace WpfHealthBreezeTV
                     RegistryKey regSoftware = Registry.CurrentUser.OpenSubKey("Software", true);
                     regHealthBreeze = regSoftware.CreateSubKey("HealthBreeze");
                 }
-                regEmail = regHealthBreeze.CreateSubKey("config");
+                regEmail = regHealthBreeze.CreateSubKey(email);
             }
 
             regEmail.SetValue("name", name);
@@ -230,8 +242,6 @@ namespace WpfHealthBreezeTV
 
         private void downloadLogoVideo()
         {
-            //if (File.Exists(ApplicationState.filePath + "logo.wvm")) return;
-            
             using (WebClient webClient = new WebClient())
             {
                 Uri from;

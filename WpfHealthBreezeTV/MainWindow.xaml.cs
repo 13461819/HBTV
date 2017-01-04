@@ -16,6 +16,9 @@ using System.Windows.Media;
 using Microsoft.Win32;
 using System.Text;
 using Newtonsoft.Json.Linq;
+using System.Threading;
+using System.Windows.Threading;
+using System.ComponentModel;
 
 namespace WpfHealthBreezeTV
 {
@@ -24,12 +27,17 @@ namespace WpfHealthBreezeTV
     /// </summary>
     public partial class MainWindow : Window
     {
+        delegate void Work();
+        private BackgroundWorker workerInit;
+        private BackgroundWorker workerChannel;
+        private BackgroundWorker workerSearch;
+
         private string URL = string.Empty;
         private string URL2 = string.Empty;
         private Dictionary<string, Video> videos = new Dictionary<string, Video>();
         static HttpClient client = new HttpClient();
         private string filePath = ApplicationState.filePath;
-        User user;
+        User user = null;
         string email = string.Empty;
         List<Channel> channels = new List<Channel>();
         List<string> myChannel = new List<string>();
@@ -38,37 +46,46 @@ namespace WpfHealthBreezeTV
         public MainWindow()
         {
             InitializeComponent();
-            
-            user = ApplicationState.GetValue<User>("currentUser");
+            Mouse.OverrideCursor = Cursors.Wait;
             email = ApplicationState.GetValue<string>("email");
-            initData();
-            
-            //setRegUser(); 필요없음
+            getChannelFromReg();
+            //new Work(backgroundWork).BeginInvoke(null, null);
+            textBlockNewUser.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Work(initData));
+            //initExecute();
+            //Mouse.OverrideCursor = null;
         }
-
-        /*
-        private void setRegUser()
+        
+        private void initExecute()
         {
-            RegistryKey regUser = Registry.CurrentUser.OpenSubKey(@"Software\HealthBreeze\" + email, true);
-
-            if (regUser == null)
-            {
-                RegistryKey regHealthBreeze = Registry.CurrentUser.OpenSubKey(@"Software\HealthBreeze", true);
-                if (regHealthBreeze == null)
-                {
-                    RegistryKey regSoftware = Registry.CurrentUser.OpenSubKey("Software", true);
-                    regHealthBreeze = regSoftware.CreateSubKey("HealthBreeze");
-                }
-                regUser = regHealthBreeze.CreateSubKey(email);
-            }
-            regUser.SetValue("uid", user.uid);
-            regUser.SetValue("did", user.did);
-            regUser.SetValue("sessionKey", user.sessionKey);
+            workerInit = new BackgroundWorker();
+            workerInit.DoWork += new DoWorkEventHandler(initData);
+            workerInit.RunWorkerAsync();
         }
-        */
+
+        private void initData(object sender, DoWorkEventArgs e)
+        {
+            initData();
+        }
+
+        private void backgroundWork()
+        {
+            if (ApplicationState.GetValue<bool>("isDataStored") == false)
+            {
+                textBlockNewUser.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Work(backgroundWork));
+            }
+            textBlockNewUser.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Work(initData));
+        }
 
         private void initData()
         {
+            
+            if (ApplicationState.GetValue<bool>("isDataStored") == false)
+            {
+                textBlockNewUser.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Work(initData));
+            }
+            
+            user = ApplicationState.GetValue<User>("currentUser");
+
             switch (ApplicationState.runAt)
             {
                 case "server":
@@ -110,32 +127,50 @@ namespace WpfHealthBreezeTV
                         System.Text.ASCIIEncoding.ASCII.GetBytes(
                             string.Format("{0}-{1}:{2}", user.uid, user.did, user.sessionKey))));
 
+            // cache-control 과정
+            RegistryKey regConfig = Registry.CurrentUser.OpenSubKey(@"Software\HealthBreeze\config", true);
+            if (File.Exists(ApplicationState.filePath + "videos.dat"))
+            {
+                if (regConfig.GetValue("last-modified") != null)
+                {
+                    client.DefaultRequestHeaders.Add("If-Modified-Since", regConfig.GetValue("last-modified") as string);
+                }
+            }
 
             try
             {
                 HttpResponseMessage response = client.GetAsync("tvapp/videos").Result;
-                string jsonStringVideos = response.Content.ReadAsStringAsync().Result;
-
+                string jsonStringVideos = string.Empty;
+                
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
-                    List<Video> tempVideos = JsonConvert.DeserializeObject<List<Video>>(jsonStringVideos);
-                    tempVideos.Sort((Video x, Video y) => x.title.CompareTo(y.title));
-                    foreach (Video v in tempVideos)
-                    {
-                        videos.Add(v.id.ToString(), v);
-                        searchResult.Add(v.id.ToString());
-                    }
-                    ApplicationState.SetValue("videos", videos);
-                    getChannelFromReg();
-                    refreshSearchResult();
-                    refreshMyChannel();
+                    jsonStringVideos = response.Content.ReadAsStringAsync().Result;
+
+                    // 파일로 저장 후 레지스트리에 last-modified값 저장
+                    File.WriteAllText(ApplicationState.filePath + "videos.dat", jsonStringVideos);
+                    regConfig.SetValue("last-modified", ((DateTimeOffset)response.Content.Headers.LastModified).ToString("r"));
+
+                }
+                else if (response.StatusCode == HttpStatusCode.NotModified)
+                {
+                    jsonStringVideos = File.ReadAllText(ApplicationState.filePath + "videos.dat");
                 }
                 else if (response.StatusCode == HttpStatusCode.BadRequest)
                 {
-                    dynamic jo = JObject.Parse(jsonStringVideos);
-                    MessageBox.Show("비디오 목록을 받아오지 못하였습니다.\n프로그램을 다시 실행시켜주세요.\n" + jo.code + ": " + jo.message);
+                    MessageBox.Show("비디오 목록을 받아오지 못하였습니다.\n프로그램을 다시 실행시켜주세요.");
                     Close();
                 }
+
+                List<Video> tempVideos = JsonConvert.DeserializeObject<List<Video>>(jsonStringVideos);
+                tempVideos = tempVideos.OrderBy(v => v.code.Substring(0, 1)).ThenBy(v => v.title).ToList();
+                foreach (Video v in tempVideos)
+                {
+                    videos.Add(v.id.ToString(), v);
+                    searchResult.Add(v.id.ToString());
+                }
+                ApplicationState.SetValue("videos", videos);
+                refreshMyChannel();
+                refreshSearchResult();
             }
             catch (HttpRequestException he)
             {
@@ -205,8 +240,8 @@ namespace WpfHealthBreezeTV
                 {
                     myChannel.RemoveAt(index);
                 }
-                refreshSearchResult();
                 refreshMyChannel();
+                refreshSearchResult();
                 updateChannelReg();
                 buttonAddChannel.Content = "추가";
             }
@@ -223,136 +258,7 @@ namespace WpfHealthBreezeTV
         {
             return playtime + "분";
         }
-        
-        /*
-        private void addVideoToListView(Video v, ListView lv)
-        {
-            Grid grid = new Grid();
-            grid.Height = 60;
-            grid.Width = 460;
-            grid.RowDefinitions.Add(new RowDefinition());
-            grid.RowDefinitions.Add(new RowDefinition());
-            grid.ColumnDefinitions.Add(new ColumnDefinition());
-            grid.ColumnDefinitions.Add(new ColumnDefinition());
-            grid.ColumnDefinitions.Add(new ColumnDefinition());
-            grid.ColumnDefinitions.Add(new ColumnDefinition());
-            grid.RowDefinitions[0].Height = new GridLength(1, GridUnitType.Star);
-            grid.RowDefinitions[1].Height = new GridLength(1, GridUnitType.Star);
-            //grid.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
-            //grid.ColumnDefinitions[1].Width = new GridLength(4, GridUnitType.Star);
-            grid.ColumnDefinitions[0].Width = new GridLength(72);
-            grid.ColumnDefinitions[1].Width = new GridLength(288);
-            grid.ColumnDefinitions[2].Width = new GridLength(50);
-            grid.ColumnDefinitions[3].Width = new GridLength(50);
-
-            ContextMenu contextMenu = new ContextMenu();
-
-            MenuItem menuItemAdd = new MenuItem();
-            menuItemAdd.Header = "채널에 추가";
-            menuItemAdd.Click += MenuItemAdd_Click;
-
-            MenuItem menuItemRemove = new MenuItem();
-            menuItemRemove.Header = "채널에서 삭제";
-            menuItemRemove.Click += MenuItemRemove_Click;
-
-            Separator separator = new Separator();
-
-            MenuItem menuItemDownload = new MenuItem();
-            menuItemDownload.Header = "비디오 다운로드";
-            menuItemDownload.Click += MenuItemDownload_Click;
-
-            if (lv.Name == "listViewSearch")
-            {
-                contextMenu.Items.Add(menuItemAdd);
-            }
-            if (lv.Name == "listViewChannel")
-            {
-                contextMenu.Items.Add(menuItemRemove);
-            }
-            //contextMenu.Items.Add(separator);
-            //contextMenu.Items.Add(menuItemDownload);
-
-            System.Windows.Controls.Image thumbnail = new System.Windows.Controls.Image();
-            thumbnail.Source = new BitmapImage(new Uri(v.thumbnail));
-            thumbnail.Stretch = System.Windows.Media.Stretch.Fill;
-            Grid.SetRowSpan(thumbnail, 2);
-
-            Canvas canvas = new Canvas();
-            Grid.SetColumn(canvas, 1);
-
-            TextBlock title = new TextBlock();
-            title.Text = v.title;
-            title.FontSize = 16;
-            title.Margin = new Thickness(10, 0, 0, 0);
-
-            canvas.Children.Add(title);
-
-            TextBlock playtime = new TextBlock();
-            playtime.Text = convertPlayTime(v.playtime);
-            playtime.FontSize = 14;
-            playtime.Margin = new Thickness(10, 0, 0, 0);
-            Grid.SetColumn(playtime, 1);
-            Grid.SetRow(playtime, 1);
-
-            ToolTip toolTip = new ToolTip();
-            toolTip.Content = v.title;
-
-            grid.Children.Add(thumbnail);
-            grid.Children.Add(canvas);
-            grid.Children.Add(playtime);
-            grid.ContextMenu = contextMenu;
-
-            grid.Name = (lv.Name == "listViewSearch" ? "s" : "c") + v.id.ToString();
-            grid.MouseLeftButtonDown += Grid_MouseLeftButtonDown;
-            grid.ToolTip = toolTip;
-            //grid.MouseEnter += Grid_MouseEnter;
-            //grid.MouseLeave += Grid_MouseLeave;
-            
-            if (isVideoChanneled(v.id.ToString()) && lv.Name == "listViewSearch")
-            {
-                //grid.Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0xCC, 0xF1, 0xFF));
-                System.Windows.Controls.Image channeled = new System.Windows.Controls.Image();
-                channeled.Source = new BitmapImage(new Uri("img/channel.png", UriKind.Relative));
-                Grid.SetRowSpan(channeled, 2);
-                channeled.Width = 18;
-                channeled.Margin = new Thickness(0, 0, 2, 2);
-                channeled.HorizontalAlignment = HorizontalAlignment.Right;
-                channeled.VerticalAlignment = VerticalAlignment.Bottom;
-                grid.Children.Add(channeled);
-            }
-
-            if (isVideoDownloaded(v.code))
-            {
-                System.Windows.Controls.Image saved = new System.Windows.Controls.Image();
-                saved.Source = new BitmapImage(new Uri("img/Icon-download.png", UriKind.Relative));
-                saved.Width = 35;
-                Grid.SetColumn(saved, 2);
-                Grid.SetRowSpan(saved, 2);
-                grid.Children.Add(saved);
-            }
-
-            if (isPlayable(v.id))
-            {
-                System.Windows.Controls.Image play = new System.Windows.Controls.Image();
-                play.Source = new BitmapImage(new Uri("img/Icon-Opened.png", UriKind.Relative));
-                play.Width = 35;
-                Grid.SetColumn(play, 3);
-                Grid.SetRowSpan(play, 2);
-                grid.Children.Add(play);
-            }
-            else
-            {
-                System.Windows.Controls.Image play = new System.Windows.Controls.Image();
-                play.Source = new BitmapImage(new Uri("img/Icon-Closed.png", UriKind.Relative));
-                play.Width = 35;
-                Grid.SetColumn(play, 3);
-                Grid.SetRowSpan(play, 2);
-                grid.Children.Add(play);
-            }
-
-            lv.Items.Add(grid);
-        }*/
-        
+                
         private void addVideoToListView(Video v, ListBox lb)
         {
             Grid grid = new Grid();
@@ -365,8 +271,6 @@ namespace WpfHealthBreezeTV
             grid.ColumnDefinitions.Add(new ColumnDefinition());
             grid.RowDefinitions[0].Height = new GridLength(1, GridUnitType.Star);
             grid.RowDefinitions[1].Height = new GridLength(1, GridUnitType.Star);
-            //grid.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
-            //grid.ColumnDefinitions[1].Width = new GridLength(4, GridUnitType.Star);
             grid.ColumnDefinitions[0].Width = new GridLength(96);
             grid.ColumnDefinitions[1].Width = new GridLength(30, GridUnitType.Star);
             grid.ColumnDefinitions[2].Width = new GridLength(4, GridUnitType.Star);
@@ -570,8 +474,8 @@ namespace WpfHealthBreezeTV
                 default:
                     break;
             }
-            refreshSearchResult();
             refreshMyChannel();
+            refreshSearchResult();
             //updateChannelFile();
             updateChannelReg();
         }
@@ -614,8 +518,8 @@ namespace WpfHealthBreezeTV
             {
                 MessageBox.Show(channelExistVideo + "\n해당 비디오는 이미 채널에 등록되어있습니다.");
             }
-            refreshSearchResult();
             refreshMyChannel();
+            refreshSearchResult();
             //updateChannelFile();
             updateChannelReg();
         }
@@ -948,8 +852,8 @@ namespace WpfHealthBreezeTV
 
         private void buttonRefresh_Click(object sender, RoutedEventArgs e)
         {
-            refreshSearchResult();
             refreshMyChannel();
+            refreshSearchResult();
             MessageBox.Show("새로고침 완료");
         }
         
@@ -998,19 +902,91 @@ namespace WpfHealthBreezeTV
         private void refreshMyChannel()
         {
             listBoxChannel.Items.Clear();
+
+            //new Work(setChannel).BeginInvoke(null, null);
+
+            
+            Thread myChannelThread = new Thread(new ThreadStart(channelThread));
+            myChannelThread.SetApartmentState(ApartmentState.STA);
+            myChannelThread.IsBackground = true;
+            myChannelThread.Start();
+            
+
+            /*
+            Thread thread = new Thread(() => channelThread());
+            thread.IsBackground = true;
+            
+            thread.Start();
+            */
+        }
+
+        private void setChannel()
+        {
+            listBoxChannel.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Work(displayChannel));
+        }
+
+        private void displayChannel()
+        {
             foreach (string id in myChannel)
             {
                 addVideoToListView(videos[id], listBoxChannel);
             }
         }
 
+        void channelThread()
+        {
+            listBoxChannel.Dispatcher.Invoke(DispatcherPriority.Normal, new Action(delegate
+            {
+                foreach (string id in myChannel)
+                {
+                    addVideoToListView(videos[id], listBoxChannel);
+                }
+            }));
+        }
+
         private void refreshSearchResult()
         {
             listBoxSearch.Items.Clear();
+
+            //new Work(setSearch).BeginInvoke(null, null);
+
+            
+            Thread searchResultThread = new Thread(new ThreadStart(searchThread));
+            searchResultThread.SetApartmentState(ApartmentState.STA);
+            searchResultThread.IsBackground = true;
+            searchResultThread.Start();
+            
+
+            /*
+            Thread thread = new Thread(() => searchThread());
+            thread.IsBackground = true;
+            
+            thread.Start();
+            */
+        }
+
+        private void setSearch()
+        {
+            listBoxChannel.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Work(displaySearch));
+        }
+
+        private void displaySearch()
+        {
             foreach (string id in searchResult)
             {
                 addVideoToListView(videos[id], listBoxSearch);
             }
+        }
+
+        void searchThread()
+        {
+            listBoxChannel.Dispatcher.Invoke(DispatcherPriority.Normal, new Action(delegate
+            {
+                foreach (string id in searchResult)
+                {
+                    addVideoToListView(videos[id], listBoxSearch);
+                }
+            }));
         }
 
         private void changeChanneledThumb(string changedVideo, bool isAdd)
@@ -1118,8 +1094,8 @@ namespace WpfHealthBreezeTV
         {
             if (e.Key == Key.F5)
             {
-                refreshSearchResult();
                 refreshMyChannel();
+                refreshSearchResult();
                 MessageBox.Show("새로고침 완료");
             }
         }
