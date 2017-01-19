@@ -44,7 +44,7 @@ namespace WpfHealthBreezeTV
             getChannelFromReg();
             initData();
             getVideos();
-            //loadImage();
+            loadImage();
             refreshMyChannel();
             refreshSearchResult();
             getPlayerSize();
@@ -89,19 +89,21 @@ namespace WpfHealthBreezeTV
 
         private void loadImage()
         {
-            try
+            Dispatcher uiDispatcher = Dispatcher.CurrentDispatcher;
+            BackgroundWorker worker = new BackgroundWorker();
+            worker.DoWork += (sender, e) =>
             {
-                foreach (KeyValuePair<string, Video> v in videos)
+                uiDispatcher.BeginInvoke(new Action(() =>
                 {
-                    v.Value.img = new BitmapImage(new Uri(v.Value.thumbnail));
-                    setImage(v.Value);
-                }
-            }
-            catch (Exception ex)
-            {
-                string error = ex.Source + "\n" + ex.Message + "\n" + ex.StackTrace;
-                MessageBox.Show(error);
-            }
+                    foreach (KeyValuePair<string, Video> v in videos)
+                    {
+                        v.Value.img = new BitmapImage(new Uri(v.Value.thumbnail));
+                        setImage(v.Value);
+                    }
+                }));
+            };
+
+            worker.RunWorkerAsync();
         }
 
         private void setImage(Video v)
@@ -113,6 +115,7 @@ namespace WpfHealthBreezeTV
             }
         }
 
+        /*
         private void setImage()
         {
             foreach (KeyValuePair<string, Video> v in videos)
@@ -124,7 +127,7 @@ namespace WpfHealthBreezeTV
                 }
             }
         }
-        
+        */
 
         /*
         private void setImage(Video v, BitmapImage img)
@@ -415,16 +418,16 @@ namespace WpfHealthBreezeTV
             Separator separator = new Separator();
 
             Image thumbnail = new Image();
+            /*
+            BitmapImage bitmapImage = new BitmapImage();
+            bitmapImage.BeginInit();
+            bitmapImage.UriSource = new Uri(v.thumbnail, UriKind.Relative);
+            bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+            bitmapImage.EndInit();
 
-            //BitmapImage bitmapImage = new BitmapImage();
-            //bitmapImage.BeginInit();
-            //bitmapImage.UriSource = new Uri(v.thumbnail, UriKind.Relative);
-            //bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-            //bitmapImage.EndInit();
-
-            thumbnail.Source = new BitmapImage(new Uri(v.thumbnail));
-            
-            //thumbnail.Source = (v.img == null) ? new BitmapImage(new Uri("img/thumbnail.png", UriKind.Relative)) : v.img;
+            //thumbnail.Source = new BitmapImage(new Uri(v.thumbnail));
+            */
+            thumbnail.Source = (v.img == null) ? new BitmapImage(new Uri("img/thumbnail.png", UriKind.Relative)) : v.img;
             //thumbnail.Source = v.img;
             thumbnail.Stretch = Stretch.Fill;
             Grid.SetRowSpan(thumbnail, 2);
