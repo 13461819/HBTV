@@ -24,33 +24,34 @@
                 </Grid>
             </TabItem.Header>
             <Grid Background="White">
-                <StackPanel Orientation="Horizontal">
-                    <TextBox x:Name="textBoxSearch" HorizontalAlignment="Left" Height="30" Margin="5,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="150" KeyDown="textBoxSearch_KeyDown" FontSize="16"/>
-                    <Button x:Name="buttonSearch" Content="검색" HorizontalAlignment="Left" Margin="0, 10, 0, 0" VerticalAlignment="Top" Width="60" Height="30" Click="buttonSearch_Click" Cursor="Hand" FontSize="16" Background="#FFF0F0F0" BorderBrush="#FFACACAC"/>
-                </StackPanel>
-                <ComboBox HorizontalAlignment="Center" VerticalAlignment="Top" Margin="126,10,0,0" Height="30" Width="160" FontSize="16">
+                <ComboBox x:Name="comboBoxCategory" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5,10,0,0" Height="30" Width="160" FontSize="16" SelectionChanged="comboBoxCategory_SelectionChanged">
                     <ComboBox.Background>
                         <LinearGradientBrush EndPoint="0,1" StartPoint="0,0">
                             <GradientStop Color="#FFF0F0F0" Offset="0"/>
                             <GradientStop Color="#FFF0F0F0" Offset="1"/>
                         </LinearGradientBrush>
                     </ComboBox.Background>
-                    <ComboBoxItem Content="질병증상"></ComboBoxItem>
-                    <ComboBoxItem Content="진단적 술기"></ComboBoxItem>
-                    <ComboBoxItem Content="치료적 술기"></ComboBoxItem>
-                    <ComboBoxItem Content="입원/퇴원"></ComboBoxItem>
-                    <ComboBoxItem Content="의약품"></ComboBoxItem>
-                    <ComboBoxItem Content="운동/재활"></ComboBoxItem>
-                    <ComboBoxItem Content="자가 치료"></ComboBoxItem>
-                    <ComboBoxItem Content="식이"></ComboBoxItem>
-                    <ComboBoxItem Content="행정 교육"></ComboBoxItem>
-                    <ComboBoxItem Content="의료 기기 사용"></ComboBoxItem>
-                    <ComboBoxItem Content="기타"></ComboBoxItem>
-                    <ComboBoxItem Content="환자 안내 시리즈"></ComboBoxItem>
+                    <ComboBoxItem Tag="all" IsSelected="True" Content="전체 카테고리"></ComboBoxItem>
+                    <ComboBoxItem Tag="a" Content="질병증상"></ComboBoxItem>
+                    <ComboBoxItem Tag="b" Content="진단적 술기"></ComboBoxItem>
+                    <ComboBoxItem Tag="c" Content="치료적 술기"></ComboBoxItem>
+                    <ComboBoxItem Tag="d" Content="입원/퇴원"></ComboBoxItem>
+                    <ComboBoxItem Tag="e" Content="의약품"></ComboBoxItem>
+                    <ComboBoxItem Tag="f" Content="운동/재활"></ComboBoxItem>
+                    <ComboBoxItem Tag="g" Content="자가 치료"></ComboBoxItem>
+                    <ComboBoxItem Tag="h" Content="식이"></ComboBoxItem>
+                    <ComboBoxItem Tag="i" Content="행정 교육"></ComboBoxItem>
+                    <ComboBoxItem Tag="j" Content="의료 기기 사용"></ComboBoxItem>
+                    <ComboBoxItem Tag="k" Content="기타"></ComboBoxItem>
+                    <ComboBoxItem Tag="l" Content="환자 안내 시리즈"></ComboBoxItem>
                 </ComboBox>
+                <StackPanel Orientation="Horizontal">
+                    <TextBox x:Name="textBoxSearch" HorizontalAlignment="Left" Height="30" Margin="177,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="150" KeyDown="textBoxSearch_KeyDown" FontSize="16" PreviewKeyUp="textBoxSearch_PreviewKeyUp"/>
+                    <Button x:Name="buttonSearch" Content="검색" HorizontalAlignment="Left" Margin="0, 10, 0, 0" VerticalAlignment="Top" Width="60" Height="30" Click="buttonSearch_Click" Cursor="Hand" FontSize="16" Background="#FFF0F0F0" BorderBrush="#FFACACAC"/>
+                </StackPanel>
                 <Button x:Name="buttonAddChannel" Content="추가" Height="30
                         " HorizontalAlignment="Right" Margin="0,10,5,0" VerticalAlignment="Top" Width="85" Click="buttonAddChannel_Click" Cursor="Hand" FontSize="16" Background="#FFF0F0F0" BorderBrush="#FFACACAC"></Button>
-                <ListBox x:Name="listBoxSearch" Margin="5,55,5,5" ScrollViewer.HorizontalScrollBarVisibility="Disabled"  MouseUp="listBoxSearch_MouseUp" HorizontalContentAlignment="Stretch" SelectionMode="Multiple">
+                <ListBox x:Name="listBoxSearch" Margin="5,55,5,5" ScrollViewer.HorizontalScrollBarVisibility="Disabled"  MouseUp="listBoxSearch_MouseUp" HorizontalContentAlignment="Stretch" SelectionMode="Multiple" PreviewMouseRightButtonDown="listBox_PreviewMouseRightButtonDown">
                     <ListBoxItem FontSize="20">
                         Please Wait...
                     </ListBoxItem>
@@ -77,15 +78,20 @@
             <Grid Background="White">
                 <Grid Height="50" VerticalAlignment="Top" Margin="5, 0, 5, 0">
                     <Grid.ColumnDefinitions>
+                        <!--<ColumnDefinition Width="6*" />
+                        <ColumnDefinition Width="6*" />-->
                         <ColumnDefinition Width="1*" />
                         <ColumnDefinition Width="1*" />
-                        <!--<ColumnDefinition Width="1*" />-->
                     </Grid.ColumnDefinitions>
                     <Button x:Name="buttonPlay" Margin="0, 10, 2.5, 0" Grid.Column="0" Content="시  청" Click="buttonPlay_Click" Height="30" Cursor="Hand" FontSize="16" Background="#FFF0F0F0" Width="170" BorderBrush="#FFACACAC" VerticalAlignment="Top"/>
                     <Button x:Name="buttonDelete" Margin="2.5, 10, 2.5, 0" Grid.Column="1" Content="삭  제" Click="buttonDelete_Click" Height="30" Cursor="Hand" FontSize="16" Background="#FFF0F0F0" Width="170" BorderBrush="#FFACACAC" VerticalAlignment="Top"/>
+                    <!-- <StackPanel Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Left" Grid.Column="2">
+                        <Button x:Name="buttonListUp" Content="˄" Height="20" Width="30" Click="buttonListUp_Click" Background="#FFF0F0F0"/>
+                        <Button x:Name="buttonListDown" Content="˅" Width="30" Click="buttonListDown_Click" Background="#FFF0F0F0"/>
+                    </StackPanel> -->
                     <!--<Button x:Name="buttonRefresh" Margin="2.5, 0, 0, 0" Grid.Column="2" Content="새로고침" Click="buttonRefresh_Click" Height="35" Cursor="Hand"/>-->
                 </Grid>
-                <ListBox x:Name="listBoxChannel" Margin="5,55,5,5" ScrollViewer.HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch" SelectionMode="Multiple" MouseUp="listBoxChannel_MouseUp" >
+                <ListBox x:Name="listBoxChannel" Margin="5,55,5,5" ScrollViewer.HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch" SelectionMode="Multiple" MouseUp="listBoxChannel_MouseUp" PreviewMouseRightButtonDown="listBox_PreviewMouseRightButtonDown" >
                     <ListBoxItem FontSize="20">
                         Please Wait...
                     </ListBoxItem>
@@ -110,12 +116,22 @@
                 </Grid>
             </TabItem.Header>
             <Grid Background="White">
-                <Button x:Name="buttonNewUser" Content="사용자 추가" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,125,0,0" FontSize="16" Click="textBlockNewUser_Click" Cursor="Hand" Background="#FFF0F0F0" BorderBrush="#FFACACAC"/>
-                <TextBlock x:Name="textBlockNewUser" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,50,0,0" FontSize="16" TextAlignment="Center">
-                    ※ 이 기능은
-                    <LineBreak></LineBreak>
-                    관리자만 사용하실 수 있습니다.
-                </TextBlock>
+                <Button x:Name="buttonNewUser" Content="사용자 추가" FontSize="16" Click="buttonNewUser_Click" Cursor="Hand" Background="#FFF0F0F0" BorderBrush="#FFACACAC" Width="150" Height="30" Margin="60,50,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                <GroupBox x:Name="groupBox" Header="재생 창 설정" HorizontalAlignment="Left" Margin="41,95,0,0" VerticalAlignment="Top" Height="170" Width="353"/>
+                <Button x:Name="buttonSetWindowPosition" Content="재생 위치 선택" Width="150" Height="30" Click="buttonSetWindowPosition_Click" Cursor="Hand" Background="#FFF0F0F0" BorderBrush="#FFACACAC" FontSize="16" Margin="60,213,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                <Button x:Name="buttonSetWindowSize" Content="재생 창 미리보기" Width="150" Height="30" Click="buttonSetWindowSize_Click" Cursor="Hand" Background="#FFF0F0F0" BorderBrush="#FFACACAC" FontSize="16" Margin="228,213,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                <TextBlock Text="x" Width="35" Margin="62,121,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="16" Height="25"/>
+                <TextBox x:Name="textBoxX" Height="23" Margin="113,121,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" TextWrapping="Wrap" Width="70" PreviewTextInput="textBoxPreviewTextInput"/>
+                <TextBlock Text="y" Width="35" Margin="62,159,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="16" Height="25"/>
+                <TextBox x:Name="textBoxY" HorizontalAlignment="Left" Height="23" Margin="113,160,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="70" PreviewTextInput="textBoxPreviewTextInput"/>
+                <TextBlock Text="넓이" Width="35" Margin="222,121,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="16" Height="25"/>
+                <TextBox x:Name="textBoxWidth" Height="23" Margin="294,121,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" TextWrapping="Wrap" Width="70" PreviewTextInput="textBoxPreviewTextInput"/>
+                <TextBlock Text="높이" Width="35" Margin="222,159,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="16" Height="25"/>
+                <TextBox x:Name="textBoxHeight" HorizontalAlignment="Left" Height="23" Margin="294,160,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="70" PreviewTextInput="textBoxPreviewTextInput"/>
+                <Button x:Name="buttonChannelExport" Content="채널 내보내기" Width="150" Height="30" Click="buttonChannelExport_Click" Cursor="Hand" Background="#FFF0F0F0" BorderBrush="#FFACACAC" FontSize="16" Margin="60,300,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                <Button x:Name="buttonChannelImport" Content="채널 가져오기" Width="150" Height="30" Click="buttonChannelImport_Click" Cursor="Hand" Background="#FFF0F0F0" BorderBrush="#FFACACAC" FontSize="16" Margin="228,300,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                <Button x:Name="buttonMyInfo" Content="내 정보" Width="150" Height="30" Cursor="Hand" Background="#FFF0F0F0" BorderBrush="#FFACACAC" FontSize="16" Margin="60,360,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="Hidden"/>
+                <Button x:Name="buttonAppInfo" Content="앱 정보" Width="150" Height="30" Cursor="Hand" Background="#FFF0F0F0" BorderBrush="#FFACACAC" FontSize="16" Margin="228,360,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="buttonAppInfo_Click"/>
             </Grid>
         </TabItem>
     </TabControl>

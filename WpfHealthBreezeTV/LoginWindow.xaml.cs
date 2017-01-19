@@ -12,6 +12,7 @@ using System.Windows.Input;
 using System.Net;
 using System.IO;
 using System.Threading;
+using System.Deployment.Application;
 
 namespace WpfHealthBreezeTV
 {
@@ -21,12 +22,14 @@ namespace WpfHealthBreezeTV
     public partial class LoginWindow : Window
     {
         private string URL = string.Empty;
+        private string appVersion = string.Empty;
         private User user;
 
         public LoginWindow()
         {
             InitializeComponent();
             getInitData();
+            //MessageBox.Show("appVersion: " + appVersion);
         }
         private void getInitData()
         {
@@ -62,6 +65,14 @@ namespace WpfHealthBreezeTV
                 textBoxEmail.Text = regConfig.GetValue("last_email") as string;
                 textBoxName.Text = getNameFromReg(textBoxEmail.Text);
                 passwordBoxPassword.Focus();
+            }
+            try
+            {
+                appVersion = ApplicationDeployment.CurrentDeployment.CurrentVersion.ToString();
+            }
+            catch (InvalidDeploymentException)
+            {
+                appVersion = "not installed";
             }
         }
 
@@ -106,26 +117,30 @@ namespace WpfHealthBreezeTV
                 {
                     // 이메일 데이터만 저장하고 바로 MainWindow 호출
                     ApplicationState.SetValue("email", textBoxEmail.Text);
-                    MainWindow mainWondow = new MainWindow();
-                    mainWondow.Show();
+                    //MainWindow mainWondow = new MainWindow();
+                    //mainWondow.Show();
 
                     // MainWindow에서는 로드되고 난 후 나머지 데이터 기다림
-                    Mouse.OverrideCursor = null;
+                    //Mouse.OverrideCursor = null;
                     string responseText = response.Content.ReadAsStringAsync().Result;
                     dynamic jo = JObject.Parse(responseText);
                     user = JsonConvert.DeserializeObject<User>(responseText);
                     ApplicationState.SetValue("currentUser", user);
                     ApplicationState.SetValue("isDataStored", true);
                     RegistryKey regConfig = Registry.CurrentUser.OpenSubKey(@"Software\HealthBreeze\config", true);
+                    ApplicationState.SetValue("emr_id", regConfig.GetValue("emr_id") as string);
                     regConfig.SetValue("last_email", textBoxEmail.Text);
                     setNameToReg(textBoxEmail.Text, textBoxName.Text);
+
+                    MainWindow mainWondow = new MainWindow();
+                    mainWondow.Show();
 
                     // logo.wvm 파일 다운로드
                     Thread downloadLogoVideoThread = new Thread(new ThreadStart(downloadLogoVideo));
                     downloadLogoVideoThread.SetApartmentState(ApartmentState.STA);
                     downloadLogoVideoThread.IsBackground = true;
                     downloadLogoVideoThread.Start();
-                    this.Close();
+                    Close();
                 }
                 else if (response.StatusCode == HttpStatusCode.BadRequest)
                 {

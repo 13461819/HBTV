@@ -1,0 +1,21 @@
+﻿<Window x:Class="WpfHealthBreezeTV.SetPlayerSize"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WpfHealthBreezeTV"
+        mc:Ignorable="d"
+        Title="동영상 재생 창 위치 설정" Height="329" Width="480">
+    <Grid>
+        <Label HorizontalContentAlignment="Center" VerticalContentAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <TextBlock FontSize="16">
+                이 창은 동영상이 재생 될 위치를 확인하는 창입니다.
+                <LineBreak/>
+                원하는 위치와 크기를 맞춘 후 확인을 눌러주세요.
+            </TextBlock>
+        </Label>
+        <Button x:Name="buttonReset" Content="초기화" Width="75" Height="30" Margin="0,0,0,50" VerticalAlignment="Bottom"
+          Click="buttonReset_Click"/>
+        <Button x:Name="buttonOK" Content="확인" Width="75" Height="30" Margin="0,0,0,10" VerticalAlignment="Bottom" Click="buttonOK_Click"/>
+    </Grid>
+</Window>

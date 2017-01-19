@@ -22,7 +22,7 @@
                     <ColumnDefinition Width="79*"/>
                 </Grid.ColumnDefinitions>
                 <Border Grid.RowSpan="2" Grid.ColumnSpan="3" Background="#FF00C5F7" Margin="0, 5, 0, 5">
-                    <Image Source="C:\Users\Administrator\documents\visual studio 2015\Projects\WpfHealthBreezeTV\WpfHealthBreezeTV\img\logo.png" HorizontalAlignment="Center" VerticalAlignment="Center" Width="170" Margin="0"/>
+                    <Image Source="img\logo.png" HorizontalAlignment="Center" VerticalAlignment="Center" Width="170" Margin="0"/>
                 </Border>
                 <TextBlock Text="E-mail" Grid.Row="2" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="18" Margin="5,6,0,7" ></TextBlock>
                 <TextBox x:Name="textBoxEMail" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Width="210" FontSize="15" Margin="5,4,5,3" Height="25"/>
@@ -35,20 +35,20 @@
         <TabItem Height="0">
             <Grid>
                 <TextBlock Text="e-mail" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="24" Margin="20,20,0,0"></TextBlock>
-                <TextBox x:Name="textBoxUserEmail" VerticalAlignment="Top" HorizontalAlignment="Right" FontSize="24" Margin="0,20,20,0" Width="250"></TextBox>
+                <TextBox x:Name="textBoxUserEmail" VerticalAlignment="Top" HorizontalAlignment="Right" FontSize="24" Margin="0,20,25,0" Width="270"></TextBox>
                 <TextBlock Text="이름" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="24" Margin="20,72.5,0,0"></TextBlock>
-                <TextBox x:Name="textBoxUserName" VerticalAlignment="Top" HorizontalAlignment="Right" FontSize="24" Margin="0,72.5,20,0" Width="250"></TextBox>
+                <TextBox x:Name="textBoxUserName" VerticalAlignment="Top" HorizontalAlignment="Right" FontSize="24" Margin="0,72,25,0" Width="270"></TextBox>
                 <TextBlock Text="전화번호" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="24" Margin="20,125,0,0"></TextBlock>
-                <TextBox x:Name="textBoxTelNum" VerticalAlignment="Top" HorizontalAlignment="Right" FontSize="24" Margin="0,125,80,0" Width="190" Height="34"></TextBox>
-                <Button x:Name="buttonRequest" Content="요청" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,125,20,170" Height="34" Width="40" Click="buttonRequest_Click" Cursor="Hand"/>
+                <TextBox x:Name="textBoxTelNum" VerticalAlignment="Top" HorizontalAlignment="Right" FontSize="24" Margin="0,125,133,0" Width="162" Height="34"/>
+                <Button x:Name="buttonRequest" Content="인증번호 요청" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,125,25,0" Height="34" Width="90" Click="buttonRequest_Click" Cursor="Hand"/>
                 <TextBlock Text="인증번호" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="24" Margin="20,177.5,0,0"></TextBlock>
-                <TextBox x:Name="textBoxTelToken" VerticalAlignment="Top" HorizontalAlignment="Right" FontSize="24" Margin="0,177.5,80,0" Width="190" IsEnabled="False"></TextBox>
-                <Button x:Name="buttonVerify" Content="확인" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,177.5,20,170" Height="34" Width="40" IsEnabled="False" Click="buttonVerify_Click" Cursor="Hand"></Button>
+                <TextBox x:Name="textBoxTelToken" VerticalAlignment="Top" HorizontalAlignment="Right" FontSize="24" Margin="0,178,133,0" Width="162" IsEnabled="False"></TextBox>
+                <Button x:Name="buttonVerify" Content="인증번호 확인" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,178,25,0" Height="34" Width="90" IsEnabled="False" Click="buttonVerify_Click" Cursor="Hand"></Button>
                 <TextBlock Text="비밀번호" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="24" Margin="20,230,0,0"></TextBlock>
-                <PasswordBox x:Name="passwordBoxPassword" VerticalAlignment="Top" HorizontalAlignment="Right" FontSize="24" Margin="0,230,20,0" Width="250" Height="34"></PasswordBox>
+                <PasswordBox x:Name="passwordBoxPassword" VerticalAlignment="Top" HorizontalAlignment="Right" FontSize="24" Margin="0,230,25,0" Width="270" Height="34"></PasswordBox>
                 <TextBlock Text="비밀번호 확인" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="24" Margin="20,282.5,0,0"></TextBlock>
-                <PasswordBox x:Name="passwordBoxConfirmPassword" VerticalAlignment="Top" HorizontalAlignment="Right" FontSize="24" Margin="0,282.8,20,0" Width="250"></PasswordBox>
-                <Button x:Name="buttonSignUp" Content="회원가입" VerticalAlignment="Bottom" HorizontalAlignment="Center" FontSize="24" Margin="0,0,0,20" Click="buttonSignUp_Click" Height="40" Width="120" Cursor="Hand"/>
+                <PasswordBox x:Name="passwordBoxConfirmPassword" VerticalAlignment="Top" HorizontalAlignment="Right" FontSize="24" Margin="0,283,25,0" Width="270"></PasswordBox>
+                <Button x:Name="buttonSignUp" Content="관리자 가입" VerticalAlignment="Bottom" HorizontalAlignment="Center" FontSize="24" Margin="0,0,0,21" Click="buttonSignUp_Click" Height="40" Width="150" Cursor="Hand"/>
             </Grid>
         </TabItem>
     </TabControl>

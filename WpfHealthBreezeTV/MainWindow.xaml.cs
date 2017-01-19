@@ -16,9 +16,8 @@ using System.Windows.Media;
 using Microsoft.Win32;
 using System.Text;
 using Newtonsoft.Json.Linq;
-using System.Threading;
-using System.Windows.Threading;
 using System.ComponentModel;
+using System.Windows.Threading;
 
 namespace WpfHealthBreezeTV
 {
@@ -27,11 +26,6 @@ namespace WpfHealthBreezeTV
     /// </summary>
     public partial class MainWindow : Window
     {
-        delegate void Work();
-        private BackgroundWorker workerInit;
-        private BackgroundWorker workerChannel;
-        private BackgroundWorker workerSearch;
-
         private string URL = string.Empty;
         private string URL2 = string.Empty;
         private Dictionary<string, Video> videos = new Dictionary<string, Video>();
@@ -46,46 +40,109 @@ namespace WpfHealthBreezeTV
         public MainWindow()
         {
             InitializeComponent();
-            Mouse.OverrideCursor = Cursors.Wait;
             email = ApplicationState.GetValue<string>("email");
             getChannelFromReg();
-            //new Work(backgroundWork).BeginInvoke(null, null);
-            textBlockNewUser.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Work(initData));
-            //initExecute();
-            //Mouse.OverrideCursor = null;
+            initData();
+            getVideos();
+            //loadImage();
+            refreshMyChannel();
+            refreshSearchResult();
+            getPlayerSize();
+            Mouse.OverrideCursor = null;
+        }
+
+        /*
+        private void loadImage()
+        {
+            Dispatcher uiDispatcher = Dispatcher.CurrentDispatcher;
+            BackgroundWorker worker = new BackgroundWorker();
+            worker.DoWork += (sender, e) =>
+            {
+                uiDispatcher.BeginInvoke(new Action(() =>
+                {
+                    foreach (KeyValuePair<string, Video> v in videos)
+                    {
+                        //v.Value.img = new BitmapImage(new Uri(v.Value.thumbnail));
+                        v.Value.img.BeginInit();
+                        v.Value.img.UriSource = new Uri(v.Value.thumbnail);
+                        v.Value.img.EndInit();
+                        //v.Value.testStr = "이게 도대체 무다...";
+                        Console.WriteLine(v.Value.img.UriSource.ToString());
+                    }
+                }));
+            };
+            worker.RunWorkerCompleted += (sender, e) =>
+            {
+                //((TextBlock)(videos["5717424225648640"].searchGrid.Children[1])).Text = videos["5717800035287040"].id.ToString();
+                //((TextBlock)(videos["5717424225648640"].searchGrid.Children[1])).Text = videos["5717800035287040"].testStr;
+                ((TextBlock)(videos["5717424225648640"].searchGrid.Children[1])).Text = videos["5717800035287040"].img.UriSource.ToString();
+                //((Image)(videos["5717424225648640"].searchGrid.Children[0])).Source = videos["5717800035287040"].img;
+                foreach (KeyValuePair<string, Video> v in videos)
+                {
+                    setImage(v.Value);
+                }
+            };
+            
+            worker.RunWorkerAsync();
+        }
+        */
+
+        private void loadImage()
+        {
+            try
+            {
+                foreach (KeyValuePair<string, Video> v in videos)
+                {
+                    v.Value.img = new BitmapImage(new Uri(v.Value.thumbnail));
+                    setImage(v.Value);
+                }
+            }
+            catch (Exception ex)
+            {
+                string error = ex.Source + "\n" + ex.Message + "\n" + ex.StackTrace;
+                MessageBox.Show(error);
+            }
+        }
+
+        private void setImage(Video v)
+        {
+            ((Image)(v.searchGrid.Children[0])).Source = v.img;
+            if (isVideoChanneled(v.id.ToString()))
+            {
+                ((Image)(v.channelGrid.Children[0])).Source = v.img;
+            }
+        }
+
+        private void setImage()
+        {
+            foreach (KeyValuePair<string, Video> v in videos)
+            {
+                ((Image)(v.Value.searchGrid.Children[0])).Source = v.Value.img;
+                if (isVideoChanneled(v.Value.id.ToString()))
+                {
+                    ((Image)(v.Value.channelGrid.Children[0])).Source = v.Value.img;
+                }
+            }
         }
         
-        private void initExecute()
-        {
-            workerInit = new BackgroundWorker();
-            workerInit.DoWork += new DoWorkEventHandler(initData);
-            workerInit.RunWorkerAsync();
-        }
 
-        private void initData(object sender, DoWorkEventArgs e)
+        /*
+        private void setImage(Video v, BitmapImage img)
         {
-            initData();
-        }
-
-        private void backgroundWork()
-        {
-            if (ApplicationState.GetValue<bool>("isDataStored") == false)
+            Dispatcher.BeginInvoke(new Action(delegate
             {
-                textBlockNewUser.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Work(backgroundWork));
-            }
-            textBlockNewUser.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Work(initData));
+                ((Image)(v.searchGrid.Children[0])).Source = img;
+                if (isVideoChanneled(v.id.ToString()))
+                {
+                    ((Image)(v.channelGrid.Children[0])).Source = img;
+                }
+            }));
         }
+        */
 
         private void initData()
         {
-            
-            if (ApplicationState.GetValue<bool>("isDataStored") == false)
-            {
-                textBlockNewUser.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Work(initData));
-            }
-            
             user = ApplicationState.GetValue<User>("currentUser");
-
             switch (ApplicationState.runAt)
             {
                 case "server":
@@ -112,9 +169,48 @@ namespace WpfHealthBreezeTV
             if (user.authorization != 10)
             {
                 buttonNewUser.Visibility = Visibility.Hidden;
-                textBlockNewUser.Visibility = Visibility.Hidden;
             }
+        }
 
+        private void getPlayerSize()
+        {
+            RegistryKey regConfig = Registry.CurrentUser.OpenSubKey(@"Software\HealthBreeze\config", true);
+            if (regConfig.GetValue("width") != null)
+            {
+                textBoxWidth.Text = regConfig.GetValue("width") as string;
+            }
+            else
+            {
+                textBoxWidth.Text = "960";
+            }
+            if (regConfig.GetValue("height") != null)
+            {
+                textBoxHeight.Text = regConfig.GetValue("height") as string;
+            }
+            else
+            {
+                textBoxHeight.Text = "540";
+            }
+            if (regConfig.GetValue("x") != null)
+            {
+                textBoxX.Text = regConfig.GetValue("x") as string;
+            }
+            else
+            {
+                textBoxX.Text = ((SystemParameters.PrimaryScreenWidth - 960D) / 2).ToString();
+            }
+            if (regConfig.GetValue("y") != null)
+            {
+                textBoxY.Text = regConfig.GetValue("y") as string;
+            }
+            else
+            {
+                textBoxY.Text = ((SystemParameters.PrimaryScreenHeight - 540D) / 2).ToString();
+            }
+        }
+
+        private void getVideos()
+        {
             HttpClient client = new HttpClient();
             client.BaseAddress = new Uri(URL2);
             client.DefaultRequestHeaders.Accept.Clear();
@@ -124,9 +220,8 @@ namespace WpfHealthBreezeTV
                 new AuthenticationHeaderValue(
                     "Basic",
                     Convert.ToBase64String(
-                        System.Text.ASCIIEncoding.ASCII.GetBytes(
+                        Encoding.ASCII.GetBytes(
                             string.Format("{0}-{1}:{2}", user.uid, user.did, user.sessionKey))));
-
             // cache-control 과정
             RegistryKey regConfig = Registry.CurrentUser.OpenSubKey(@"Software\HealthBreeze\config", true);
             if (File.Exists(ApplicationState.filePath + "videos.dat"))
@@ -141,7 +236,7 @@ namespace WpfHealthBreezeTV
             {
                 HttpResponseMessage response = client.GetAsync("tvapp/videos").Result;
                 string jsonStringVideos = string.Empty;
-                
+
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     jsonStringVideos = response.Content.ReadAsStringAsync().Result;
@@ -165,12 +260,13 @@ namespace WpfHealthBreezeTV
                 tempVideos = tempVideos.OrderBy(v => v.code.Substring(0, 1)).ThenBy(v => v.title).ToList();
                 foreach (Video v in tempVideos)
                 {
+                    v.img = new BitmapImage(new Uri("img/thumbnail.png", UriKind.Relative));
+                    v.searchGrid = null;
+                    v.channelGrid = null;
                     videos.Add(v.id.ToString(), v);
                     searchResult.Add(v.id.ToString());
                 }
                 ApplicationState.SetValue("videos", videos);
-                refreshMyChannel();
-                refreshSearchResult();
             }
             catch (HttpRequestException he)
             {
@@ -186,21 +282,30 @@ namespace WpfHealthBreezeTV
 
         private void buttonSearch_Click(object sender, RoutedEventArgs e)
         {
+            /*
             if (textBoxSearch.Text == string.Empty)
             {
                 MessageBox.Show("검색어를 입력하세요\n전체 비디오를 보시려면 * 을 검색하세요.", "검색");
                 return;
             }
-
+            */
             searchResult.Clear();
             listBoxSearch.Items.Clear();
+            string selectedTag = ((ComboBoxItem)comboBoxCategory.SelectedItem).Tag.ToString();
 
-            if (textBoxSearch.Text == "*")
+            if (textBoxSearch.Text == "")
             {
                 foreach (KeyValuePair<string, Video> v in videos)
                 {
-                    searchResult.Add(v.Value.id.ToString());
-                    //addVideoToListView(v.Value, listViewSearch);
+                    if (selectedTag == "all")
+                    {
+                        searchResult.Add(v.Value.id.ToString());
+                    }
+                    else if (v.Value.code.Substring(0,1) == selectedTag)
+                    { 
+                        searchResult.Add(v.Value.id.ToString());
+                        //addVideoToListView(v.Value, listViewSearch);
+                    }
                 }
             }
             else
@@ -209,8 +314,15 @@ namespace WpfHealthBreezeTV
                 {
                     if (v.Value.title.IndexOf(textBoxSearch.Text) > -1)
                     {
-                        searchResult.Add(v.Value.id.ToString());
-                        //addVideoToListView(v.Value, listViewSearch);
+                        if (selectedTag == "all")
+                        {
+                            searchResult.Add(v.Value.id.ToString());
+                        }
+                        else if (v.Value.code.Substring(0, 1) == selectedTag)
+                        {
+                            searchResult.Add(v.Value.id.ToString());
+                            //addVideoToListView(v.Value, listViewSearch);
+                        }
                     }
                 }
             }
@@ -247,7 +359,7 @@ namespace WpfHealthBreezeTV
             }
         }
 
-        private void textBoxSearch_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        private void textBoxSearch_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
             {
@@ -278,7 +390,7 @@ namespace WpfHealthBreezeTV
 
             Border border = new Border();
             border.BorderThickness = new Thickness(0, 0, 0, 1);
-            border.BorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0xDD, 0xDD, 0xDD));
+            border.BorderBrush = new SolidColorBrush(Color.FromArgb(0xFF, 0xDD, 0xDD, 0xDD));
             Grid.SetRow(border, 1);
             Grid.SetColumnSpan(border, 4);
 
@@ -292,22 +404,29 @@ namespace WpfHealthBreezeTV
             menuItemRemove.Header = "채널에서 삭제";
             menuItemRemove.Click += MenuItemRemove_Click;
 
+            MenuItem menuItemPreview = new MenuItem();
+            menuItemPreview.Header = "[" + v.title + "]\n미리보기";
+            menuItemPreview.Click += MenuItemPreview_Click(v.id);
+
+            MenuItem menuItemCancel = new MenuItem();
+            menuItemCancel.Header = "취소";
+            menuItemCancel.Click += MenuItemCancel_Click(contextMenu);
+
             Separator separator = new Separator();
 
-            if (lb.Name == "listBoxSearch")
-            {
-                contextMenu.Items.Add(menuItemAdd);
-            }
-            if (lb.Name == "listBoxChannel")
-            {
-                contextMenu.Items.Add(menuItemRemove);
-            }
-            //contextMenu.Items.Add(separator);
-            //contextMenu.Items.Add(menuItemDownload);
+            Image thumbnail = new Image();
 
-            System.Windows.Controls.Image thumbnail = new System.Windows.Controls.Image();
+            //BitmapImage bitmapImage = new BitmapImage();
+            //bitmapImage.BeginInit();
+            //bitmapImage.UriSource = new Uri(v.thumbnail, UriKind.Relative);
+            //bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+            //bitmapImage.EndInit();
+
             thumbnail.Source = new BitmapImage(new Uri(v.thumbnail));
-            thumbnail.Stretch = System.Windows.Media.Stretch.Fill;
+            
+            //thumbnail.Source = (v.img == null) ? new BitmapImage(new Uri("img/thumbnail.png", UriKind.Relative)) : v.img;
+            //thumbnail.Source = v.img;
+            thumbnail.Stretch = Stretch.Fill;
             Grid.SetRowSpan(thumbnail, 2);
 
             Canvas canvas = new Canvas();
@@ -343,7 +462,21 @@ namespace WpfHealthBreezeTV
             grid.Children.Add(title);
             grid.Children.Add(playtime);
             grid.Children.Add(border);
-            grid.ContextMenu = contextMenu;
+
+            if (lb.Name == "listBoxSearch")
+            {
+                //contextMenu.Items.Add(menuItemAdd);
+                contextMenu.Items.Add(menuItemPreview);
+                //contextMenu.Items.Add(separator);
+                //contextMenu.Items.Add(menuItemCancel);
+                grid.ContextMenu = contextMenu;
+            }
+            if (lb.Name == "listBoxChannel")
+            {
+                //contextMenu.Items.Add(menuItemRemove);
+            }
+            //contextMenu.Items.Add(separator);
+            //contextMenu.Items.Add(menuItemDownload);
 
             grid.Name = (lb.Name == "listBoxSearch" ? "s" : "c") + v.id.ToString();
             //grid.MouseLeftButtonDown += Grid_MouseLeftButtonDown;
@@ -351,6 +484,11 @@ namespace WpfHealthBreezeTV
             lb.Items.Add(grid);
             if (lb.FindName(grid.Name) == null)
             {
+                lb.RegisterName(grid.Name, grid);
+            }
+            else
+            {
+                lb.UnregisterName(grid.Name);
                 lb.RegisterName(grid.Name, grid);
             }
             //grid.MouseEnter += Grid_MouseEnter;
@@ -379,7 +517,7 @@ namespace WpfHealthBreezeTV
                 if (isVideoChanneled(v.id.ToString()))
                 {
                     //grid.Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0xCC, 0xF1, 0xFF));
-                    System.Windows.Controls.Image channeled = new System.Windows.Controls.Image();
+                    Image channeled = new Image();
                     channeled.Source = new BitmapImage(new Uri("img/channel.png", UriKind.Relative));
                     Grid.SetRowSpan(channeled, 2);
                     channeled.Width = 18;
@@ -388,12 +526,13 @@ namespace WpfHealthBreezeTV
                     channeled.VerticalAlignment = VerticalAlignment.Bottom;
                     grid.Children.Add(channeled);
                 }
+                v.searchGrid = grid;
             }
             else
             {
                 if (!isVideoDownloaded(v.code))
                 {
-                    System.Windows.Controls.Image saved = new System.Windows.Controls.Image();
+                    Image saved = new Image();
                     saved.Source = new BitmapImage(new Uri("img/Icon-download.png", UriKind.Relative));
                     saved.Width = 28;
                     saved.HorizontalAlignment = HorizontalAlignment.Right;
@@ -406,7 +545,7 @@ namespace WpfHealthBreezeTV
 
                 if (!isPlayable(v.id))
                 {
-                    System.Windows.Controls.Image play = new System.Windows.Controls.Image();
+                    Image play = new Image();
                     play.Source = new BitmapImage(new Uri("img/Icon-Closed.png", UriKind.Relative));
                     play.Width = 28;
                     play.Cursor = Cursors.Help;
@@ -415,7 +554,51 @@ namespace WpfHealthBreezeTV
                     Grid.SetRow(play, 1);
                     grid.Children.Add(play);
                 }
+                v.channelGrid = grid;
             }
+        }
+        private RoutedEventHandler MenuItemCancel_Click(ContextMenu contextMenu)
+        {
+            Action<object, RoutedEventArgs> action = (sender, e) =>
+            {
+                contextMenu.IsOpen = false;
+            };
+            return new RoutedEventHandler(action);
+        }
+
+        private RoutedEventHandler MenuItemPreview_Click(long videoId)
+        {
+            Action<object, RoutedEventArgs> action = (sender, e) =>
+            {
+                previewVideo(videoId);
+            };
+            return new RoutedEventHandler(action);
+        }
+
+        private void previewVideo(long videoId)
+        {
+            string url = URL2 + "tvapp/" + user.uid.ToString() + "/" + user.did.ToString() + "/play";
+            
+            PreviewPlayWindow previewPlayWindow = new PreviewPlayWindow(url, user, videoId);
+            previewPlayWindow.Height = 649D;
+            previewPlayWindow.Width = 976D;
+            previewPlayWindow.Top = double.Parse(textBoxY.Text);
+            previewPlayWindow.Left = double.Parse(textBoxX.Text);
+            previewPlayWindow.ShowDialog();
+            /*
+            previewPlayWindow.Height = double.Parse(textBoxHeight.Text);
+            previewPlayWindow.Width = double.Parse(textBoxWidth.Text);
+            previewPlayWindow.Top = double.Parse(textBoxY.Text);
+            previewPlayWindow.Left = double.Parse(textBoxX.Text);
+            previewPlayWindow.ShowDialog();
+
+            textBoxHeight.Text = previewPlayWindow.Height.ToString();
+            textBoxWidth.Text = previewPlayWindow.Width.ToString();
+            textBoxX.Text = previewPlayWindow.Left.ToString();
+            textBoxY.Text = previewPlayWindow.Top.ToString();
+
+            savePlayerSize();
+            */
         }
 
         private bool isVideoChanneled(string id)
@@ -464,7 +647,7 @@ namespace WpfHealthBreezeTV
             switch (result)
             {
                 case MessageBoxResult.Yes:
-                    var selected = listBoxChannel.SelectedItems.Cast<Object>().ToArray();
+                    var selected = listBoxChannel.SelectedItems.Cast<object>().ToArray();
                     foreach (var item in selected)
                     {
                         myChannel.Remove(((Grid)item).Name.Substring(1));
@@ -697,7 +880,7 @@ namespace WpfHealthBreezeTV
                     new AuthenticationHeaderValue(
                         "Basic",
                         Convert.ToBase64String(
-                            System.Text.ASCIIEncoding.ASCII.GetBytes(
+                            Encoding.ASCII.GetBytes(
                                 string.Format("{0}-{1}:{2}", user.uid, user.did, user.sessionKey))));
                 try
                 {
@@ -739,7 +922,7 @@ namespace WpfHealthBreezeTV
                                     new AuthenticationHeaderValue(
                                         "Basic",
                                         Convert.ToBase64String(
-                                            System.Text.ASCIIEncoding.ASCII.GetBytes(
+                                            Encoding.ASCII.GetBytes(
                                                 string.Format("{0}-{1}:{2}", user.uid, user.did, user.sessionKey))));
                                 /*HttpResponseMessage*/ response = client.PostAsync("api/v1/webdrm/downloads", content).Result;
                                 try
@@ -799,11 +982,42 @@ namespace WpfHealthBreezeTV
             }
             else //비디오도 있고 재생권한도 있음
             {
-                selectedVideosStr = "%5B" + string.Join(",", selectedVideosList) + "%5D"; // selectedVideosStr = [id,id]
+                //selectedVideosStr = "%5B" + string.Join(",", selectedVideosList) + "%5D";
+                // selectedVideosStr = [id,id]
+                /*
                 ProcessStartInfo startInfo = new ProcessStartInfo("IEXPLORE.EXE");
                 startInfo.WindowStyle = ProcessWindowStyle.Normal;
                 startInfo.Arguments = URL2 + "tvapp/" + user.uid.ToString() + "/" + user.did.ToString() + "/play?videos=" + selectedVideosStr + "&localPath=/" + Uri.EscapeDataString(filePath.Replace("\\", "/").Substring(3, filePath.Length - 4));
                 Process.Start(startInfo);
+                */
+
+                string url = URL2 + "tvapp/" + user.uid.ToString() + "/" + user.did.ToString() + "/play";
+                string videos = "[" + string.Join(",", selectedVideosList) + "]";
+                string localPath  = "/" + filePath.Replace("\\", "/").Substring(3, filePath.Length - 4);
+                PlayWindow playWindow = new PlayWindow(url, user, videos, localPath);
+                try
+                {
+                    playWindow.Height = double.Parse(textBoxHeight.Text);
+                    playWindow.Width = double.Parse(textBoxWidth.Text);
+                    playWindow.Top = double.Parse(textBoxY.Text);
+                    playWindow.Left = double.Parse(textBoxX.Text);
+                }
+                catch (Exception ex)
+                {
+                    playWindow.Height = 540D;
+                    playWindow.Width = 960D;
+                    playWindow.Top = (SystemParameters.PrimaryScreenHeight - 540D) / 2;
+                    playWindow.Left = (SystemParameters.PrimaryScreenWidth - 960D) / 2;
+                }
+
+                playWindow.ShowDialog();
+                
+                textBoxHeight.Text = playWindow.Height.ToString();
+                textBoxWidth.Text = playWindow.Width.ToString();
+                textBoxX.Text = playWindow.Left.ToString();
+                textBoxY.Text = playWindow.Top.ToString();
+
+                savePlayerSize();
             }
         }
 
@@ -822,7 +1036,7 @@ namespace WpfHealthBreezeTV
             }
 
             string caption = "비디오 삭제";
-            string message = "정말로 채널을 비우시겠습니까?";
+            string message = "정말로 비디오를 삭제하시겠습니까?";
             MessageBoxButton button = MessageBoxButton.YesNo;
             MessageBoxImage icon = MessageBoxImage.Warning;
             MessageBoxResult result = MessageBox.Show(message, caption, button, icon);
@@ -902,91 +1116,21 @@ namespace WpfHealthBreezeTV
         private void refreshMyChannel()
         {
             listBoxChannel.Items.Clear();
-
-            //new Work(setChannel).BeginInvoke(null, null);
-
-            
-            Thread myChannelThread = new Thread(new ThreadStart(channelThread));
-            myChannelThread.SetApartmentState(ApartmentState.STA);
-            myChannelThread.IsBackground = true;
-            myChannelThread.Start();
-            
-
-            /*
-            Thread thread = new Thread(() => channelThread());
-            thread.IsBackground = true;
-            
-            thread.Start();
-            */
-        }
-
-        private void setChannel()
-        {
-            listBoxChannel.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Work(displayChannel));
-        }
-
-        private void displayChannel()
-        {
             foreach (string id in myChannel)
             {
                 addVideoToListView(videos[id], listBoxChannel);
             }
-        }
-
-        void channelThread()
-        {
-            listBoxChannel.Dispatcher.Invoke(DispatcherPriority.Normal, new Action(delegate
-            {
-                foreach (string id in myChannel)
-                {
-                    addVideoToListView(videos[id], listBoxChannel);
-                }
-            }));
+            updateChannelReg();
         }
 
         private void refreshSearchResult()
         {
             listBoxSearch.Items.Clear();
 
-            //new Work(setSearch).BeginInvoke(null, null);
-
-            
-            Thread searchResultThread = new Thread(new ThreadStart(searchThread));
-            searchResultThread.SetApartmentState(ApartmentState.STA);
-            searchResultThread.IsBackground = true;
-            searchResultThread.Start();
-            
-
-            /*
-            Thread thread = new Thread(() => searchThread());
-            thread.IsBackground = true;
-            
-            thread.Start();
-            */
-        }
-
-        private void setSearch()
-        {
-            listBoxChannel.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Work(displaySearch));
-        }
-
-        private void displaySearch()
-        {
             foreach (string id in searchResult)
             {
                 addVideoToListView(videos[id], listBoxSearch);
             }
-        }
-
-        void searchThread()
-        {
-            listBoxChannel.Dispatcher.Invoke(DispatcherPriority.Normal, new Action(delegate
-            {
-                foreach (string id in searchResult)
-                {
-                    addVideoToListView(videos[id], listBoxSearch);
-                }
-            }));
         }
 
         private void changeChanneledThumb(string changedVideo, bool isAdd)
@@ -996,7 +1140,7 @@ namespace WpfHealthBreezeTV
             {
                 if (isAdd)
                 {
-                    System.Windows.Controls.Image channeled = new System.Windows.Controls.Image();
+                    Image channeled = new Image();
                     channeled.Source = new BitmapImage(new Uri("img/channel.png", UriKind.Relative));
                     Grid.SetRowSpan(channeled, 2);
                     channeled.Width = 18;
@@ -1007,12 +1151,18 @@ namespace WpfHealthBreezeTV
                 }
                 else
                 {
-                    grid.Children.RemoveAt(4);
+                    if (!myChannel.Contains(changedVideo))
+                    {
+                        if (grid.Children.Count > 4)
+                        {
+                            grid.Children.RemoveAt(4);
+                        }
+                    }
                 }
             }
         }
 
-        private void textBlockNewUser_Click(object sender, RoutedEventArgs e)
+        private void buttonNewUser_Click(object sender, RoutedEventArgs e)
         {
             RegisterWindow registerWindow = new RegisterWindow(false);
             registerWindow.ShowDialog();
@@ -1026,11 +1176,13 @@ namespace WpfHealthBreezeTV
                 return;
             }
             string caption = "비디오 추가";
-            string message = "선택된 비디오를 채널에 추가하시겠습니까?";
+            string message = "선택된 컨텐츠를 채널에 추가하시겠습니까?";
             MessageBoxButton button = MessageBoxButton.YesNo;
             MessageBoxImage icon = MessageBoxImage.Warning;
             MessageBoxResult result = MessageBox.Show(message, caption, button, icon);
             string channelExistVideo = string.Empty;
+
+            bool isDuplicated = false;
 
             switch (result)
             {
@@ -1040,11 +1192,32 @@ namespace WpfHealthBreezeTV
                     {
                         if (myChannel.Contains(((Grid)item).Name.Substring(1)))
                         {
-                            channelExistVideo += videos[((Grid)item).Name.Substring(1)].title + "\n";
-                            continue;
+                            //channelExistVideo += videos[((Grid)item).Name.Substring(1)].title + "\n";
+                            //continue;
+                            isDuplicated = true;
+                            caption = "중복된 비디오";
+                            message = videos[((Grid)item).Name.Substring(1)].title + "\n이 컨텐츠는 이미 등록된 컨텐츠입니다.\n그래도 등록 하시겠습니까?";
+                            button = MessageBoxButton.YesNo;
+                            icon = MessageBoxImage.Warning;
+                            MessageBoxResult result2 = MessageBox.Show(message, caption, button, icon);
+                            switch (result2)
+                            {
+                                case MessageBoxResult.Yes:
+                                    myChannel.Add(((Grid)item).Name.Substring(1));
+                                    continue;
+                                default:
+                                    continue;
+                            }
                         }
-                        myChannel.Add(((Grid)item).Name.Substring(1));
-                        changeChanneledThumb(((Grid)item).Name.Substring(1), true);
+                        if (!isDuplicated)
+                        {
+                            myChannel.Add(((Grid)item).Name.Substring(1));
+                            changeChanneledThumb(((Grid)item).Name.Substring(1), true);
+                        }
+                        else
+                        {
+                            isDuplicated = false;
+                        }
                         //addVideoToListView(videos[((Grid)item).Name.Substring(1)], listViewChannel);
                     }
                     buttonAddChannel.Content = "추가";
@@ -1053,11 +1226,11 @@ namespace WpfHealthBreezeTV
                 default:
                     break;
             }
-
+            /*
             if (channelExistVideo != string.Empty)
             {
                 MessageBox.Show(channelExistVideo + "\n해당 비디오는 이미 채널에 등록되어있습니다.");
-            }
+            }*/
             //refreshSearchResult();
             refreshMyChannel();
             //updateChannelFile();
@@ -1098,6 +1271,308 @@ namespace WpfHealthBreezeTV
                 refreshSearchResult();
                 MessageBox.Show("새로고침 완료");
             }
+        }
+
+        private void buttonChannelImport_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            openFileDialog.Filter = "데이터 파일 (*.dat)|*.dat";
+            if (openFileDialog.ShowDialog() == true)
+            {
+                string channeledVideos = File.ReadAllText(openFileDialog.FileName);
+
+                if (myChannel.Count != 0)
+                {
+                    string caption = "채널 가져오기";
+                    string message = "이미 채널이 존재합니다.\n기존 채널을 삭제 후 추가하시겠습니까?\n\n아니오를 누르면 기존 채널에 추가됩니다.";
+                    MessageBoxButton button = MessageBoxButton.YesNo;
+                    MessageBoxImage icon = MessageBoxImage.Warning;
+                    MessageBoxResult result = MessageBox.Show(message, caption, button, icon);
+
+                    switch (result)
+                    {
+                        case MessageBoxResult.Yes:
+                                myChannel.Clear();
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+                foreach (string videoID in channeledVideos.Split(','))
+                {
+                    myChannel.Add(videoID);
+                }
+
+                RegistryKey regUser = Registry.CurrentUser.OpenSubKey(@"Software\HealthBreeze\" + email, true);
+                if (myChannel.Count != 0)
+                {
+                    regUser.SetValue("channel", string.Join(",", myChannel));
+                }
+                else
+                {
+                    if (regUser.GetValue("channel") != null)
+                    {
+                        regUser.DeleteValue("channel");
+                    }
+                }
+                refreshMyChannel();
+            }
+        }
+
+        private void buttonChannelExport_Click(object sender, RoutedEventArgs e)
+        {
+            SaveFileDialog saveFileDialog = new SaveFileDialog();
+            saveFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            saveFileDialog.Filter = "데이터 파일 (*.dat)|*.dat";
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                File.WriteAllText(saveFileDialog.FileName, string.Join(",", myChannel));
+            }          
+        }
+
+        private void buttonSetWindowPosition_Click(object sender, RoutedEventArgs e)
+        {
+            double screenWidth = SystemParameters.PrimaryScreenWidth;
+            double screenHeight = SystemParameters.PrimaryScreenHeight;
+            double width = double.Parse(textBoxWidth.Text);
+            double height = double.Parse(textBoxHeight.Text);
+            double top = double.Parse(textBoxY.Text);
+            double left = double.Parse(textBoxX.Text);
+
+            SettingWindow settingWindow = new SettingWindow();
+            settingWindow.Top = (SystemParameters.PrimaryScreenHeight - settingWindow.Height) / 2;
+            settingWindow.Left = (SystemParameters.PrimaryScreenWidth - settingWindow.Width) / 2;
+            settingWindow.ShowDialog();
+            
+            switch (settingWindow.location)
+            {
+                case "buttonLT":
+                    break;
+                case "buttonLC":
+                    top = (screenHeight - height) / 2;
+                    break;
+                case "buttonLB":
+                    top = (screenHeight - height);
+                    break;
+                case "buttonCT":
+                    left = (screenWidth - width) / 2;
+                    break;
+                case "buttonCC":
+                    left = (screenWidth - width) / 2;
+                    top = (screenHeight - height) / 2;
+                    break;
+                case "buttonCB":
+                    left = (screenWidth - width) / 2;
+                    top = (screenHeight - height);
+                    break;
+                case "buttonRT":
+                    left = (screenWidth - width);
+                    break;
+                case "buttonRC":
+                    left = (screenWidth - width);
+                    top = (screenHeight - height) / 2;
+                    break;
+                case "buttonRB":
+                    left = (screenWidth - width);
+                    top = (screenHeight - height);
+                    break;
+                default:
+                    break;
+            }
+
+            textBoxX.Text = left.ToString();
+            textBoxY.Text = top.ToString();
+
+            savePlayerSize();
+        }
+
+        private void buttonSetWindowSize_Click(object sender, RoutedEventArgs e)
+        {
+            SetPlayerSize setplayerSize = new SetPlayerSize();
+            setplayerSize.Height = double.Parse(textBoxHeight.Text);
+            setplayerSize.Width = double.Parse(textBoxWidth.Text);
+            setplayerSize.Top = double.Parse(textBoxY.Text);
+            setplayerSize.Left = double.Parse(textBoxX.Text);
+            setplayerSize.ShowDialog();
+
+            textBoxHeight.Text = setplayerSize.Height.ToString();
+            textBoxWidth.Text = setplayerSize.Width.ToString();
+            textBoxX.Text = setplayerSize.Left.ToString();
+            textBoxY.Text = setplayerSize.Top.ToString();
+
+            savePlayerSize();
+        }
+
+        private void buttonListUp_Click(object sender, RoutedEventArgs e)
+        {
+            if (listBoxChannel.SelectedItems.Count == 0)
+            {
+                MessageBox.Show("컨텐츠를 선택해주세요.");
+                return;
+            }
+
+            List<int> targetIndex = new List<int>();
+            List<string> selectedList = new List<string>();
+            string temp = default(string);
+            var selected = listBoxChannel.SelectedItems.Cast<object>().ToArray();
+            foreach (var item in selected)
+            {
+                selectedList.Add(((Grid)item).Name.Substring(1));
+            }
+            for (int ii = myChannel.Count; Convert.ToBoolean(ii--); )
+            {
+                if (selectedList.Contains(myChannel[ii]))
+                {
+                    if (ii == 0)
+                    {
+                        break;
+                    }
+                    targetIndex.Add(ii);
+                    if (!selectedList.Contains(myChannel[(ii - 1)]))
+                    {
+                        temp = myChannel[(ii - 1)];
+                        for (int jj = targetIndex.Count; Convert.ToBoolean(jj--); )
+                        {
+                            myChannel[targetIndex[jj] - 1] = myChannel[targetIndex[jj]];
+                        }
+                        myChannel[targetIndex[0]] = temp;
+                        ii--;
+                        targetIndex.Clear();
+                    }
+                }
+            }
+            refreshMyChannel();
+        }
+
+        private void buttonListDown_Click(object sender, RoutedEventArgs e)
+        {
+            if (listBoxChannel.SelectedItems.Count == 0)
+            {
+                MessageBox.Show("컨텐츠를 선택해주세요.");
+                return;
+            }
+        }
+
+        private void textBoxPreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            int result = default(int);
+
+            if (!(int.TryParse(e.Text, out result) || e.Text == "."))
+            {
+                e.Handled = true;
+            }
+        }
+
+        private void savePlayerSize()
+        {
+            RegistryKey regConfig = Registry.CurrentUser.OpenSubKey(@"Software\HealthBreeze\config", true);
+            regConfig.SetValue("width", textBoxWidth.Text);
+            regConfig.SetValue("height", textBoxHeight.Text);
+            regConfig.SetValue("x", textBoxX.Text);
+            regConfig.SetValue("y", textBoxY.Text);
+        }
+
+        private void textBoxSearch_PreviewKeyUp(object sender, KeyEventArgs e)
+        {
+            searchResult.Clear();
+            listBoxSearch.Items.Clear();
+            string selectedTag = ((ComboBoxItem)comboBoxCategory.SelectedItem).Tag.ToString();
+
+            if (textBoxSearch.Text == "")
+            {
+                foreach (KeyValuePair<string, Video> v in videos)
+                {
+                    if (selectedTag == "all")
+                    {
+                        searchResult.Add(v.Value.id.ToString());
+                    }
+                    else if (v.Value.code.Substring(0, 1) == selectedTag)
+                    {
+                        searchResult.Add(v.Value.id.ToString());
+                        //addVideoToListView(v.Value, listViewSearch);
+                    }
+                }
+            }
+            else
+            {
+                foreach (KeyValuePair<string, Video> v in videos)
+                {
+                    if (v.Value.title.IndexOf(textBoxSearch.Text) > -1)
+                    {
+                        if (selectedTag == "all")
+                        {
+                            searchResult.Add(v.Value.id.ToString());
+                        }
+                        else if (v.Value.code.Substring(0, 1) == selectedTag)
+                        {
+                            searchResult.Add(v.Value.id.ToString());
+                            //addVideoToListView(v.Value, listViewSearch);
+                        }
+                    }
+                }
+            }
+            refreshSearchResult();
+        }
+
+        private void comboBoxCategory_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            searchResult.Clear();
+            if (listBoxSearch != null)
+                listBoxSearch.Items.Clear();
+            string selectedTag = ((ComboBoxItem)comboBoxCategory.SelectedItem).Tag.ToString();
+
+            if (textBoxSearch != null)
+            {
+                if (textBoxSearch.Text == "")
+                {
+                    foreach (KeyValuePair<string, Video> v in videos)
+                    {
+                        if (selectedTag == "all")
+                        {
+                            searchResult.Add(v.Value.id.ToString());
+                        }
+                        else if (v.Value.code.Substring(0, 1) == selectedTag)
+                        {
+                            searchResult.Add(v.Value.id.ToString());
+                            //addVideoToListView(v.Value, listViewSearch);
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (KeyValuePair<string, Video> v in videos)
+                    {
+                        if (v.Value.title.IndexOf(textBoxSearch.Text) > -1)
+                        {
+                            if (selectedTag == "all")
+                            {
+                                searchResult.Add(v.Value.id.ToString());
+                            }
+                            else if (v.Value.code.Substring(0, 1) == selectedTag)
+                            {
+                                searchResult.Add(v.Value.id.ToString());
+                                //addVideoToListView(v.Value, listViewSearch);
+                            }
+                        }
+                    }
+                }
+                refreshSearchResult();
+            }
+        }
+
+        private void listBox_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            e.Handled = true;
+        }
+
+        private void buttonAppInfo_Click(object sender, RoutedEventArgs e)
+        {
+            AppInfoWindow appInfoWindow = new AppInfoWindow("1.1.0");
+            appInfoWindow.Left = (SystemParameters.PrimaryScreenWidth - appInfoWindow.Width) / 2;
+            appInfoWindow.Top = (SystemParameters.PrimaryScreenHeight - appInfoWindow.Height) / 2;
+            appInfoWindow.ShowDialog();
         }
     }
 }

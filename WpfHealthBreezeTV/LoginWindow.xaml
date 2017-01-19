@@ -26,7 +26,7 @@
         <TextBlock Text="E-mail" HorizontalAlignment="Left" VerticalAlignment="Center" Grid.Row="2" FontSize="18" Margin="5,6,0,7" Height="24" Width="51"></TextBlock>
         <TextBox x:Name="textBoxEmail" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Row="2" Grid.Column="1" Width="210" FontSize="15" KeyDown="textBox_KeyDown" LostFocus="textBoxEmail_LostFocus" Margin="5,4,5,3" Height="25"/>
         <TextBlock Text="Password" HorizontalAlignment="Left" VerticalAlignment="Center" Grid.Row="3" FontSize="18" Margin="5,7,0,6" Height="24" Width="76"/>
-        <PasswordBox x:Name="passwordBoxPassword" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Row="3" Grid.Column="1" Width="210" FontSize="15" KeyDown="textBox_KeyDown" Margin="5,3,5,4" Height="25" Password="00000000"/>
+        <PasswordBox x:Name="passwordBoxPassword" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Row="3" Grid.Column="1" Width="210" FontSize="15" KeyDown="textBox_KeyDown" Margin="5,3,5,4" Height="25"/>
         <TextBlock Text="TV Name" Grid.Row="4" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="18" Cursor="Help" Margin="5,6,0,6" Height="24" Width="76">
             <TextBlock.ToolTip>
                 <TextBlock>

@@ -97,7 +97,7 @@ namespace WpfHealthBreezeTV
             ToolTip toolTip = new ToolTip();
             toolTip.Content = v.title;
 
-            grid.Children.Add(thumbnail);
+            //grid.Children.Add(thumbnail);
             grid.Children.Add(canvas);
             grid.Children.Add(progressBar);
             grid.Children.Add(percent);
@@ -155,7 +155,7 @@ namespace WpfHealthBreezeTV
         {
             Action<object, DownloadProgressChangedEventArgs> action = (sender, e) =>
             {
-                setProgressChange(code, e.ProgressPercentage, (double) e.BytesReceived, (double) e.TotalBytesToReceive);
+                setProgressChange(code, e.ProgressPercentage, e.BytesReceived, e.TotalBytesToReceive);
             };
             return new DownloadProgressChangedEventHandler(action);
         }

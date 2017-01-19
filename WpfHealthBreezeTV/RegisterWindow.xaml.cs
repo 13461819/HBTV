@@ -16,10 +16,12 @@ namespace WpfHealthBreezeTV
     public partial class RegisterWindow : Window
     {
         private string URL = string.Empty;
+        private string URL2 = string.Empty;
         private bool isManagerRegister = true;
         private string smsId = string.Empty;
         private string msIsdn = string.Empty;
         private bool isPhoneVerify = false;
+        private bool isPhoneCheck = true;
 
         public RegisterWindow(bool isManagerRegister)
         {
@@ -28,37 +30,45 @@ namespace WpfHealthBreezeTV
             {
                 case "server":
                     URL = ApplicationState.serverUrl;
+                    URL2 = ApplicationState.serverUrl;
                     break;
                 case "test":
                     URL = ApplicationState.testUrl;
+                    URL2 = ApplicationState.testUrl;
                     break;
                 case "local":
                     URL = ApplicationState.localUrl1;
+                    URL2 = ApplicationState.localUrl2;
                     break;
                 default:
                     break;
             }
             this.isManagerRegister = isManagerRegister;
-            if (isEMRAleadyExist())
+            if (isManagerRegister)
             {
-                if (isManagerAleadyExist())
+                if (isEMRAleadyExist())
                 {
-                    if (isManagerRegister)
+                    if (isManagerAleadyExist())
                     {
                         MessageBox.Show("이미 등록이 완료되었습니다.");
                         Close();
                     }
                     else
                     {
-                        this.Title = "회원가입 (일반 사용자)";
+                        tabControlRegister.SelectedIndex = 1;
                     }
                 }
-                tabControlRegister.SelectedIndex = 1;
+                else
+                {
+                    Width = 400;
+                    Height = 250;
+                }
             }
             else
             {
-                this.Width = 400;
-                this.Height = 250;
+                tabControlRegister.SelectedIndex = 1;
+                Title = "회원가입 (일반 사용자)";
+                buttonSignUp.Content = "사용자 추가";
             }
         }
 
@@ -232,7 +242,7 @@ namespace WpfHealthBreezeTV
                 new AuthenticationHeaderValue(
                     "Basic",
                     Convert.ToBase64String(
-                        System.Text.ASCIIEncoding.ASCII.GetBytes(
+                        Encoding.ASCII.GetBytes(
                             string.Format("{0}:{1}", emr_id, emr_api_key))));
 
             try
@@ -308,8 +318,6 @@ namespace WpfHealthBreezeTV
         {
             if (isEnteredValidValue())
             {
-                string emr_id = ApplicationState.GetValue<string>("emr_id");
-                string emr_api_key = ApplicationState.GetValue<string>("emr_api_key");
                 string user_id = string.Empty;
                 string user_api_key = string.Empty;
                 string data = "{\"country\":\"KR\",\"msIsdn\":\"" + msIsdn + "\",\"nickName\":\"" + textBoxUserName.Text + 
@@ -317,23 +325,34 @@ namespace WpfHealthBreezeTV
                     "\",\"password\":\"" + passwordBoxPassword.Password + "\"}";
                 var content = new StringContent(data, Encoding.UTF8, "application/json");
 
+                string urlPath = string.Empty;
+                string auth = string.Empty;
+                if (isManagerRegister)
+                {
+                    urlPath = ApplicationState.GetValue<string>("emr_id") + "/register";
+                    auth = string.Format("{0}:{1}", ApplicationState.GetValue<string>("emr_id"), ApplicationState.GetValue<string>("emr_api_key"));
+                }
+                else
+                {
+                    urlPath = ApplicationState.GetValue<string>("emr_id") + "/tv_accounts";
+                    auth = string.Format("{0}-{1}:{2}",
+                                            ApplicationState.GetValue<User>("currentUser").uid,
+                                            ApplicationState.GetValue<User>("currentUser").did,
+                                            ApplicationState.GetValue<User>("currentUser").sessionKey);
+                }
+
                 HttpClient client = new HttpClient();
                 client.BaseAddress = new Uri(URL);
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(
                     new MediaTypeWithQualityHeaderValue("application/json"));
                 client.DefaultRequestHeaders.Authorization =
-                    new AuthenticationHeaderValue(
-                        "Basic",
-                        Convert.ToBase64String(
-                            System.Text.ASCIIEncoding.ASCII.GetBytes(
-                                string.Format("{0}:{1}", emr_id, emr_api_key))));
-                string managerOrUser = isManagerRegister ? "/register" : "/accounts";
+                    new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes(auth)));
                 try
                 {
-                    HttpResponseMessage response = client.PostAsync("emr/" + emr_id + managerOrUser, content).Result;
+                    HttpResponseMessage response = client.PostAsync("emr/" + urlPath, content).Result;
                     //response.EnsureSuccessStatusCode();
-
+                    
                     string responseText = response.Content.ReadAsStringAsync().Result;
                     dynamic jo = JObject.Parse(responseText);
 
@@ -361,11 +380,13 @@ namespace WpfHealthBreezeTV
                         {
                             RegistryKey regConfig = Registry.CurrentUser.OpenSubKey(@"Software\HealthBreeze\config", true);
                             regConfig.SetValue("manager", true);
+                            if (regConfig.GetValue("api_key") != null)
+                            {
+                                regConfig.DeleteValue("api_key");
+                            }
                         }
 
-                        ApplicationState.SetValue("user_id", user_id);
-                        ApplicationState.SetValue("user_api_key", user_api_key);
-                        MessageBox.Show(textBoxUserEmail.Text + "계정이 가입되었습니다.\n메일함에서 인증하신 후 사용하실 수 있습니다.");
+                        MessageBox.Show(textBoxUserEmail.Text + "계정이 가입되었습니다.\n\n메일함에서 인증한 후 사용하실 수 있습니다.");
                         Close();
                     }
                     else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
@@ -399,6 +420,10 @@ namespace WpfHealthBreezeTV
                                 break;
                         }
                         buttonRequest.IsEnabled = true;
+                    }
+                    else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                    {
+                        MessageBox.Show("관리자가 아닙니다.");
                     }
                 }
                 catch (HttpRequestException he)
@@ -449,20 +474,34 @@ namespace WpfHealthBreezeTV
         private void buttonRequest_Click(object sender, RoutedEventArgs e)
         {
             buttonRequest.IsEnabled = false;
-
-            string emr_id = ApplicationState.GetValue<string>("emr_id");
-            string emr_api_key = ApplicationState.GetValue<string>("emr_api_key");
-            Dictionary<string, string> dataObject = new Dictionary<string, string>();
+            Dictionary<string, object> dataObject = new Dictionary<string, object>();
             dataObject.Add("type", "Pro");
             dataObject.Add("country", "82");
             dataObject.Add("lang", "ko");
             dataObject.Add("mdn", textBoxTelNum.Text);
-            dataObject.Add("checkAccount", "True");
-            var data = JsonConvert.SerializeObject(dataObject);
+            dataObject.Add("checkAccount", isPhoneCheck);
+            var data = JsonConvert.SerializeObject(dataObject);            
             var content = new StringContent(data, Encoding.UTF8, "application/json");
-
             HttpClient client = new HttpClient();
-            client.BaseAddress = new Uri(URL);
+
+            string urlPath = string.Empty;
+            string auth = string.Empty;
+            if (isManagerRegister)
+            {
+                urlPath = "emr";
+                client.BaseAddress = new Uri(URL);
+                auth = string.Format("{0}:{1}", ApplicationState.GetValue<string>("emr_id"), ApplicationState.GetValue<string>("emr_api_key"));
+            }
+            else
+            {
+                urlPath = "tvapp";
+                client.BaseAddress = new Uri(URL2);
+                auth = string.Format("{0}-{1}:{2}",
+                                        ApplicationState.GetValue<User>("currentUser").uid,
+                                        ApplicationState.GetValue<User>("currentUser").did,
+                                        ApplicationState.GetValue<User>("currentUser").sessionKey);
+            }
+
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(
                 new MediaTypeWithQualityHeaderValue("application/json"));
@@ -470,12 +509,12 @@ namespace WpfHealthBreezeTV
                 new AuthenticationHeaderValue(
                     "Basic",
                     Convert.ToBase64String(
-                        System.Text.ASCIIEncoding.ASCII.GetBytes(
-                            string.Format("{0}:{1}", emr_id, emr_api_key))));
+                        Encoding.ASCII.GetBytes(
+                            auth)));
 
             try
             {
-                HttpResponseMessage response = client.PostAsync("emr/request", content).Result;
+                HttpResponseMessage response = client.PostAsync(urlPath + "/request", content).Result;
                 //response.EnsureSuccessStatusCode();
                 string responseText = response.Content.ReadAsStringAsync().Result;
                 dynamic jo = JObject.Parse(responseText);
@@ -497,13 +536,34 @@ namespace WpfHealthBreezeTV
                     switch ((string)jo.code)
                     {
                         case "3001":
-                            MessageBox.Show("이미 존재하는 번화번호입니다.");
+                            string caption = "전화번호 중복";
+                            string message = "이미 존재하는 번화번호입니다.\n\n그래도 진행 하시겠습니까?";
+                            MessageBoxButton button = MessageBoxButton.YesNo;
+                            MessageBoxImage icon = MessageBoxImage.Warning;
+                            MessageBoxResult result = MessageBox.Show(message, caption, button, icon);
+
+                            switch (result)
+                            {
+                                case MessageBoxResult.Yes:
+                                    isPhoneCheck = false;
+                                    buttonRequest_Click(sender, e);
+                                    break;
+                                case MessageBoxResult.No:
+                                    textBoxTelNum.Text = string.Empty;
+                                    break;
+                                default:
+                                    break;
+                            }
                             break;
                         default:
                             MessageBox.Show("전화번호 인증 실패\n" + jo.code + ": " + jo.message);
                             break;
                     }
                     buttonRequest.IsEnabled = true;
+                }
+                else
+                {
+                    MessageBox.Show(response.StatusCode.ToString());
                 }
             }
             catch (HttpRequestException he)
@@ -519,17 +579,32 @@ namespace WpfHealthBreezeTV
 
         private void buttonVerify_Click(object sender, RoutedEventArgs e)
         {
-            string emr_id = ApplicationState.GetValue<string>("emr_id");
-            string emr_api_key = ApplicationState.GetValue<string>("emr_api_key");
             Dictionary<string, string> dataObject = new Dictionary<string, string>();
             dataObject.Add("smsId", smsId);
             dataObject.Add("msIsdn", msIsdn);
             dataObject.Add("token", textBoxTelToken.Text);
             var data = JsonConvert.SerializeObject(dataObject);
             var content = new StringContent(data, Encoding.UTF8, "application/json");
-
             HttpClient client = new HttpClient();
-            client.BaseAddress = new Uri(URL);
+
+            string urlPath = string.Empty;
+            string auth = string.Empty;
+            if (isManagerRegister)
+            {
+                urlPath = "emr";
+                client.BaseAddress = new Uri(URL);
+                auth = string.Format("{0}:{1}", ApplicationState.GetValue<string>("emr_id"), ApplicationState.GetValue<string>("emr_api_key"));
+            }
+            else
+            {
+                urlPath = "tvapp";
+                client.BaseAddress = new Uri(URL2);
+                auth = string.Format("{0}-{1}:{2}", 
+                                        ApplicationState.GetValue<User>("currentUser").uid,
+                                        ApplicationState.GetValue<User>("currentUser").did,
+                                        ApplicationState.GetValue<User>("currentUser").sessionKey);
+            }
+
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(
                 new MediaTypeWithQualityHeaderValue("application/json"));
@@ -537,12 +612,12 @@ namespace WpfHealthBreezeTV
                 new AuthenticationHeaderValue(
                     "Basic",
                     Convert.ToBase64String(
-                        System.Text.ASCIIEncoding.ASCII.GetBytes(
-                            string.Format("{0}:{1}", emr_id, emr_api_key))));
+                        Encoding.ASCII.GetBytes(
+                            auth)));
 
             try
             {
-                HttpResponseMessage response = client.PutAsync("emr/request", content).Result;
+                HttpResponseMessage response = client.PutAsync(urlPath + "/request", content).Result;
                 response.EnsureSuccessStatusCode();
 
                 string responseText = response.Content.ReadAsStringAsync().Result;
