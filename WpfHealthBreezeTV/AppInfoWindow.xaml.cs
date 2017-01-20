@@ -12,5 +12,10 @@ namespace WpfHealthBreezeTV
             InitializeComponent();
             textBlockAppVersion.Text = appVersion;
         }
+
+        private void Grid_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            Close();
+        }
     }
 }

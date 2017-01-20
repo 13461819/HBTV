@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WpfHealthBreezeTV"
         mc:Ignorable="d"
-        Title="미리보기" Height="300" Width="300">
+        Title="미리보기" Height="649" Width="976" ResizeMode="NoResize">
     <Grid>
         <WebBrowser x:Name="webBrowser"/>
     </Grid>

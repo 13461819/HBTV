@@ -52,7 +52,9 @@ namespace WpfHealthBreezeTV
             grid.ColumnDefinitions[1].Width = new GridLength(4, GridUnitType.Star);
             
             Image thumbnail = new Image();
-            thumbnail.Source = new BitmapImage(new Uri(v.thumbnail));
+            //thumbnail.Source = new BitmapImage(new Uri(v.thumbnail));
+            thumbnail.Source = v.img;
+            //thumbnail.Source = (v.img == null) ? new BitmapImage(new Uri("img/thumbnail.png", UriKind.Relative)) : v.img;
             thumbnail.Stretch = Stretch.Fill;
             Grid.SetRowSpan(thumbnail, 2);
 
@@ -97,7 +99,7 @@ namespace WpfHealthBreezeTV
             ToolTip toolTip = new ToolTip();
             toolTip.Content = v.title;
 
-            //grid.Children.Add(thumbnail);
+            grid.Children.Add(thumbnail);
             grid.Children.Add(canvas);
             grid.Children.Add(progressBar);
             grid.Children.Add(percent);

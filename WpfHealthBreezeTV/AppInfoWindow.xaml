@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:WpfHealthBreezeTV"
         mc:Ignorable="d"
         Title="HealthBreeze TV 정보" Height="250" Width="500" ResizeMode="NoResize" FontFamily="Consolas">
-    <Grid>
+    <Grid MouseLeftButtonUp="Grid_MouseLeftButtonUp">
         <Grid.RowDefinitions>
             <RowDefinition Height="1*"/>
             <RowDefinition Height="2*"/>

@@ -13,9 +13,9 @@ namespace WpfHealthBreezeTV
         public string thumbnail { get; set; }
         public string title { get; set; }
         public DateTime updated { get; set; }
-        public BitmapImage img { get; set; }
         public Grid searchGrid { get; set; }
         public Grid channelGrid { get; set; }
         public string testStr { get; set; }
+        public BitmapImage img { get; set; }
     }
 }
