@@ -1753,7 +1753,7 @@ namespace WpfHealthBreezeTV
 
         private void buttonAppInfo_Click(object sender, RoutedEventArgs e)
         {
-            AppInfoWindow appInfoWindow = new AppInfoWindow("1.2.0");
+            AppInfoWindow appInfoWindow = new AppInfoWindow("1.1.0");
             appInfoWindow.Left = (SystemParameters.PrimaryScreenWidth - appInfoWindow.Width) / 2;
             appInfoWindow.Top = (SystemParameters.PrimaryScreenHeight - appInfoWindow.Height) / 2;
             appInfoWindow.ShowDialog();
