@@ -142,7 +142,7 @@
                     </CheckBox.RenderTransform>
                 </CheckBox>
                 <TextBlock Text="자동 로그인" FontSize="16" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="107,364,0,0"/>
-                <Button x:Name="buttonAppInfo" Content="앱 정보" Width="150" Height="30" Cursor="Hand" Background="#FFF0F0F0" BorderBrush="#FFACACAC" FontSize="16" Margin="228,360,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="buttonAppInfo_Click"/>
+                <Button x:Name="buttonAppInfo" Content="앱 정보" Width="150" Height="30" Cursor="Hand" Background="#FFF0F0F0" BorderBrush="#FFACACAC" FontSize="16" Margin="60,420,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="buttonAppInfo_Click"/>
             </Grid>
         </TabItem>
     </TabControl>
