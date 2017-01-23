@@ -12,7 +12,7 @@ using System.Windows.Input;
 using System.Net;
 using System.IO;
 using System.Threading;
-using System.Deployment.Application;
+using System.Security.Cryptography;
 
 namespace WpfHealthBreezeTV
 {
@@ -22,14 +22,12 @@ namespace WpfHealthBreezeTV
     public partial class LoginWindow : Window
     {
         private string URL = string.Empty;
-        private string appVersion = string.Empty;
         private User user;
 
         public LoginWindow()
         {
             InitializeComponent();
             getInitData();
-            //MessageBox.Show("appVersion: " + appVersion);
         }
         private void getInitData()
         {
@@ -65,14 +63,11 @@ namespace WpfHealthBreezeTV
                 textBoxEmail.Text = regConfig.GetValue("last_email") as string;
                 textBoxName.Text = getNameFromReg(textBoxEmail.Text);
                 passwordBoxPassword.Focus();
-            }
-            try
-            {
-                appVersion = ApplicationDeployment.CurrentDeployment.CurrentVersion.ToString();
-            }
-            catch (InvalidDeploymentException)
-            {
-                appVersion = "not installed";
+                if (regConfig.GetValue("auto_login") != null)
+                {
+                    passwordBoxPassword.Password = getPasswordFromReg(textBoxEmail.Text);
+                    login();
+                }
             }
         }
 
@@ -89,10 +84,14 @@ namespace WpfHealthBreezeTV
                 return;
             }
 
+            login();
+        }
+
+        private void login()
+        {
             Mouse.OverrideCursor = Cursors.Wait;
             buttonLogin.Content = "로그인중";
             buttonLogin.IsEnabled = false;
-            
 
             Dictionary<string, string> dataObject = new Dictionary<string, string>();
             dataObject.Add("email", textBoxEmail.Text);
@@ -108,7 +107,7 @@ namespace WpfHealthBreezeTV
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(
                 new MediaTypeWithQualityHeaderValue("application/json"));
-            
+
             try
             {
                 HttpResponseMessage response = client.PostAsync("tvapp/login", content).Result;
@@ -131,6 +130,7 @@ namespace WpfHealthBreezeTV
                     ApplicationState.SetValue("emr_id", regConfig.GetValue("emr_id") as string);
                     regConfig.SetValue("last_email", textBoxEmail.Text);
                     setNameToReg(textBoxEmail.Text, textBoxName.Text);
+                    setPasswordToReg(textBoxEmail.Text, passwordBoxPassword.Password);
 
                     MainWindow mainWondow = new MainWindow();
                     mainWondow.Show();
@@ -250,6 +250,41 @@ namespace WpfHealthBreezeTV
             return name;
         }
 
+        private void setPasswordToReg(string email, string password)
+        {
+            RegistryKey regEmail = Registry.CurrentUser.OpenSubKey(@"Software\HealthBreeze\" + email, true);
+
+            if (regEmail == null)
+            {
+                RegistryKey regHealthBreeze = Registry.CurrentUser.OpenSubKey(@"Software\HealthBreeze", true);
+                if (regHealthBreeze == null)
+                {
+                    RegistryKey regSoftware = Registry.CurrentUser.OpenSubKey("Software", true);
+                    regHealthBreeze = regSoftware.CreateSubKey("HealthBreeze");
+                }
+                regEmail = regHealthBreeze.CreateSubKey(email);
+            }
+
+            regEmail.SetValue("password", encryptPassword(email, password));
+        }
+
+        private string getPasswordFromReg(string email)
+        {
+            string password = string.Empty;
+
+            RegistryKey regEmail = Registry.CurrentUser.OpenSubKey(@"Software\HealthBreeze\" + email, true);
+
+            if (regEmail != null)
+            {
+                if (regEmail.GetValue("password") != null)
+                {
+                    password = regEmail.GetValue("password") as string;
+                }
+            }
+
+            return decryptPassword(email, password);
+        }
+
         private void textBoxEmail_LostFocus(object sender, RoutedEventArgs e)
         {
             textBoxName.Text = getNameFromReg(textBoxEmail.Text);
@@ -281,6 +316,101 @@ namespace WpfHealthBreezeTV
                     webClient.DownloadFileAsync(from, ApplicationState.filePath + "logo.wvm");
                 }
             }
+        }
+
+        private string encryptPassword(string email, string password)
+        {
+            byte[] hash = SHA256Hash(email);
+            byte[] key = new byte[16];
+            Array.Copy(hash, 0, key, 0, 16);
+            byte[] iv = new byte[16];
+            Array.Copy(hash, 16, iv, 0, 16);
+            return AESEncrypt128(password, key, iv);
+        }
+
+        private string decryptPassword(string email, string password)
+        {
+            byte[] hash = SHA256Hash(email);
+            byte[] key = new byte[16];
+            Array.Copy(hash, 0, key, 0, 16);
+            byte[] iv = new byte[16];
+            Array.Copy(hash, 16, iv, 0, 16);
+            return AESDecrypt128(password, key, iv);
+        }
+
+        private byte[] SHA256Hash(string email)
+        {
+            SHA256 sha256 = new SHA256Managed();
+            return sha256.ComputeHash(Encoding.ASCII.GetBytes(email));
+        }
+
+        public string AESEncrypt128(string password, byte[] key, byte[] iv)
+        {
+            RijndaelManaged rijndaelManaged = new RijndaelManaged();
+
+            // 입력받은 문자열을 바이트 배열로 변환  
+            byte[] plainText = Encoding.Unicode.GetBytes(password);
+
+            // 딕셔너리 공격을 대비해서 키를 더 풀기 어렵게 만들기 위해서   
+            // Salt를 사용한다.  
+            byte[] salt = Encoding.ASCII.GetBytes(password.Length.ToString());
+
+            PasswordDeriveBytes secretKey = new PasswordDeriveBytes(password, salt);
+
+
+            // Create a encryptor from the existing SecretKey bytes.  
+            // encryptor 객체를 SecretKey로부터 만든다.  
+            // Secret Key에는 16바이트  
+            // Initialization Vector로 16바이트를 사용  
+            ICryptoTransform encryptor = rijndaelManaged.CreateEncryptor(key, iv);
+
+            MemoryStream memoryStream = new MemoryStream();
+
+            // CryptoStream객체를 암호화된 데이터를 쓰기 위한 용도로 선언  
+            CryptoStream cryptoStream = new CryptoStream(memoryStream, encryptor, CryptoStreamMode.Write);
+
+            cryptoStream.Write(plainText, 0, plainText.Length);
+
+            cryptoStream.FlushFinalBlock();
+
+            byte[] CipherBytes = memoryStream.ToArray();
+
+            memoryStream.Close();
+            cryptoStream.Close();
+
+            string EncryptedData = Convert.ToBase64String(CipherBytes);
+
+            return EncryptedData;
+        }
+
+        public string AESDecrypt128(string password, byte[] key, byte[] iv)
+        {
+            RijndaelManaged rijndaelManaged = new RijndaelManaged();
+
+            byte[] encryptedData = Convert.FromBase64String(password);
+            byte[] salt = Encoding.ASCII.GetBytes(password.Length.ToString());
+
+            PasswordDeriveBytes secretKey = new PasswordDeriveBytes(password, salt);
+
+            // Decryptor 객체를 만든다.  
+            ICryptoTransform decryptor = rijndaelManaged.CreateDecryptor(key, iv);
+
+            MemoryStream memoryStream = new MemoryStream(encryptedData);
+
+            // 데이터 읽기 용도의 cryptoStream객체  
+            CryptoStream cryptoStream = new CryptoStream(memoryStream, decryptor, CryptoStreamMode.Read);
+
+            // 복호화된 데이터를 담을 바이트 배열을 선언한다.  
+            byte[] plainText = new byte[encryptedData.Length];
+
+            int decryptedCount = cryptoStream.Read(plainText, 0, plainText.Length);
+
+            memoryStream.Close();
+            cryptoStream.Close();
+
+            string DecryptedData = Encoding.Unicode.GetString(plainText, 0, decryptedCount);
+
+            return DecryptedData;
         }
     }
 }

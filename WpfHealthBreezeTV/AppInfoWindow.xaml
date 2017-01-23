@@ -12,7 +12,7 @@
             <RowDefinition Height="2*"/>
         </Grid.RowDefinitions>
         <Border Background="#FF00C5F7">
-            <Image Source="img\logo.png" HorizontalAlignment="Center" VerticalAlignment="Center" Width="170" Margin="0"/>
+            <Image Source="img\logo.png" HorizontalAlignment="Center" VerticalAlignment="Center" Width="140" Margin="0"/>
         </Border>
         <Border Background="#FFF0F0F0" Grid.Row="1">
             <StackPanel VerticalAlignment="Center">

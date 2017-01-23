@@ -131,6 +131,17 @@
                 <Button x:Name="buttonChannelExport" Content="채널 내보내기" Width="150" Height="30" Click="buttonChannelExport_Click" Cursor="Hand" Background="#FFF0F0F0" BorderBrush="#FFACACAC" FontSize="16" Margin="60,300,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
                 <Button x:Name="buttonChannelImport" Content="채널 가져오기" Width="150" Height="30" Click="buttonChannelImport_Click" Cursor="Hand" Background="#FFF0F0F0" BorderBrush="#FFACACAC" FontSize="16" Margin="228,300,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
                 <Button x:Name="buttonMyInfo" Content="내 정보" Width="150" Height="30" Cursor="Hand" Background="#FFF0F0F0" BorderBrush="#FFACACAC" FontSize="16" Margin="60,360,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="Hidden"/>
+                <CheckBox x:Name="checkBoxAutoLogin" Margin="72,362,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="checkBoxAutoLogin_Click">
+                    <CheckBox.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform ScaleX="1.6" ScaleY="1.6"/>
+                            <SkewTransform/>
+                            <RotateTransform/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </CheckBox.RenderTransform>
+                </CheckBox>
+                <TextBlock Text="자동 로그인" FontSize="16" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="107,364,0,0"/>
                 <Button x:Name="buttonAppInfo" Content="앱 정보" Width="150" Height="30" Cursor="Hand" Background="#FFF0F0F0" BorderBrush="#FFACACAC" FontSize="16" Margin="228,360,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="buttonAppInfo_Click"/>
             </Grid>
         </TabItem>

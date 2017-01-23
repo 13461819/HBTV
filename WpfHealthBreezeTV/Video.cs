@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 
@@ -17,5 +18,6 @@ namespace WpfHealthBreezeTV
         public Grid channelGrid { get; set; }
         public string testStr { get; set; }
         public BitmapImage img { get; set; }
+        public byte[] imageBytes { get; set; }
     }
 }

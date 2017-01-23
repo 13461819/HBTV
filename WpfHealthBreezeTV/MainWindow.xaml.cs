@@ -35,7 +35,9 @@ namespace WpfHealthBreezeTV
         List<Channel> channels = new List<Channel>();
         List<string> myChannel = new List<string>();
         List<string> searchResult = new List<string>();
-        
+        int downloadedCount = 0;
+        private string appVersion = "1.1.2";
+
         public MainWindow()
         {
             InitializeComponent();
@@ -210,24 +212,54 @@ namespace WpfHealthBreezeTV
         {
             Action<object, DownloadDataCompletedEventArgs> action = (sender, e) =>
             {
+                //byte[] imageBytes = e.Result;
+                v.imageBytes = e.Result;
+                downloadedCount++;
+                if (videos.Count == downloadedCount)
+                {
+                    uiDispatcher.BeginInvoke(new Action(delegate
+                    {
+                        Mouse.OverrideCursor = Cursors.Wait;
+                        foreach (KeyValuePair<string, Video> video in videos)
+                        {
+                            video.Value.img = new BitmapImage();
+                            video.Value.img.BeginInit();
+                            video.Value.img.StreamSource = new MemoryStream(video.Value.imageBytes);
+                            video.Value.img.CacheOption = BitmapCacheOption.OnLoad;
+                            video.Value.img.EndInit();
+                            video.Value.img.Freeze();
+                            ((Image)(video.Value.searchGrid.Children[0])).Source = video.Value.img;
+                            if (isVideoChanneled(video.Value.id.ToString()))
+                            {
+                                ((Image)(video.Value.channelGrid.Children[0])).Source = video.Value.img;
+                            }
+                        }
+                        Mouse.OverrideCursor = null;
+                    }));
+                }
+                /*
                 uiDispatcher.BeginInvoke(new Action(delegate
                 {
-                    byte[] imageBytes = e.Result;
-                    using (MemoryStream stream = new MemoryStream(imageBytes))
+                    using (MemoryStream stream = new MemoryStream(v.imageBytes))
                     {
-                        v.img = new BitmapImage();
-                        v.img.BeginInit();
-                        v.img.StreamSource = stream;
-                        v.img.CacheOption = BitmapCacheOption.OnLoad;
-                        v.img.EndInit();
-                        v.img.Freeze();
-                        ((Image)(v.searchGrid.Children[0])).Source = v.img;
-                        if (isVideoChanneled(v.id.ToString()))
+                        //if (videoCount == downloadedCount)
                         {
-                            ((Image)(v.channelGrid.Children[0])).Source = v.img;
+                            v.img = new BitmapImage();
+                            v.img.BeginInit();
+                            v.img.StreamSource = stream;
+                            v.img.CacheOption = BitmapCacheOption.OnLoad;
+                            v.img.EndInit();
+                            v.img.Freeze();
+                            ((Image)(v.searchGrid.Children[0])).Source = v.img;
+                            if (isVideoChanneled(v.id.ToString()))
+                            {
+                                ((Image)(v.channelGrid.Children[0])).Source = v.img;
+                            }
+                            //setImage();
                         }
                     }
-                }));
+                }));*/
+                //Console.WriteLine(downloadedCount);
             };
             return new DownloadDataCompletedEventHandler(action);
         }
@@ -344,6 +376,12 @@ namespace WpfHealthBreezeTV
             if (user.authorization != 10)
             {
                 buttonNewUser.Visibility = Visibility.Hidden;
+            }
+
+            RegistryKey regConfig = Registry.CurrentUser.OpenSubKey(@"Software\HealthBreeze\config", true);
+            if (regConfig.GetValue("auto_login") != null)
+            {
+                checkBoxAutoLogin.IsChecked = true;
             }
         }
 
@@ -1753,10 +1791,25 @@ namespace WpfHealthBreezeTV
 
         private void buttonAppInfo_Click(object sender, RoutedEventArgs e)
         {
-            AppInfoWindow appInfoWindow = new AppInfoWindow("1.1.0");
+            AppInfoWindow appInfoWindow = new AppInfoWindow(appVersion);
             appInfoWindow.Left = (SystemParameters.PrimaryScreenWidth - appInfoWindow.Width) / 2;
             appInfoWindow.Top = (SystemParameters.PrimaryScreenHeight - appInfoWindow.Height) / 2;
             appInfoWindow.ShowDialog();
+        }
+
+        private void checkBoxAutoLogin_Click(object sender, RoutedEventArgs e)
+        {
+            RegistryKey regConfig = Registry.CurrentUser.OpenSubKey(@"Software\HealthBreeze\config", true);
+
+            if (((CheckBox)sender).IsChecked == true)
+            {
+                regConfig.SetValue("auto_login", true);
+            }
+            else
+            {
+                if (regConfig.GetValue("auto_login") != null)
+                    regConfig.DeleteValue("auto_login");
+            }
         }
     }
 }
