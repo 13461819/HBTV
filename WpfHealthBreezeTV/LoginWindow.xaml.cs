@@ -98,7 +98,7 @@ namespace WpfHealthBreezeTV
             dataObject.Add("password", passwordBoxPassword.Password);
             dataObject.Add("p_id", getCpuId());
             dataObject.Add("name", textBoxName.Text);
-            dataObject.Add("version", int.Parse(ApplicationState.appVersion.Replace(".", string.Empty)));
+            dataObject.Add("version", int.Parse(string.Join("", Array.ConvertAll(ApplicationState.appVersion.Split('.'), s => int.Parse(s).ToString("D2")))));
 
             var data = JsonConvert.SerializeObject(dataObject);
             var content = new StringContent(data, Encoding.UTF8, "application/json");
