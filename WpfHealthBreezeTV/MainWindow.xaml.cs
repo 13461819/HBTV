@@ -36,7 +36,6 @@ namespace WpfHealthBreezeTV
         List<string> myChannel = new List<string>();
         List<string> searchResult = new List<string>();
         int downloadedCount = 0;
-        private string appVersion = "1.1.2";
 
         public MainWindow()
         {
@@ -1791,7 +1790,7 @@ namespace WpfHealthBreezeTV
 
         private void buttonAppInfo_Click(object sender, RoutedEventArgs e)
         {
-            AppInfoWindow appInfoWindow = new AppInfoWindow(appVersion);
+            AppInfoWindow appInfoWindow = new AppInfoWindow(ApplicationState.GetValue<string>("appVersion"));
             appInfoWindow.Left = (SystemParameters.PrimaryScreenWidth - appInfoWindow.Width) / 2;
             appInfoWindow.Top = (SystemParameters.PrimaryScreenHeight - appInfoWindow.Height) / 2;
             appInfoWindow.ShowDialog();

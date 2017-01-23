@@ -12,6 +12,7 @@ namespace WpfHealthBreezeTV
         public static string localUrl1 = "http://10.11.12.100:8081/"; //로컬서버
         public static string localUrl2 = "http://10.11.12.100:8082/"; //로컬서버
         public static string runAt = "server"; //server, test, local
+        public static string appVersion = "1.1.2";
 
         public static void SetValue(string key, object value)
         {

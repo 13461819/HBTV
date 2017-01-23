@@ -93,11 +93,12 @@ namespace WpfHealthBreezeTV
             buttonLogin.Content = "로그인중";
             buttonLogin.IsEnabled = false;
 
-            Dictionary<string, string> dataObject = new Dictionary<string, string>();
+            Dictionary<string, object> dataObject = new Dictionary<string, object>();
             dataObject.Add("email", textBoxEmail.Text);
             dataObject.Add("password", passwordBoxPassword.Password);
             dataObject.Add("p_id", getCpuId());
             dataObject.Add("name", textBoxName.Text);
+            dataObject.Add("version", int.Parse(ApplicationState.appVersion.Replace(".", string.Empty)));
 
             var data = JsonConvert.SerializeObject(dataObject);
             var content = new StringContent(data, Encoding.UTF8, "application/json");
