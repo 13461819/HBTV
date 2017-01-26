@@ -173,7 +173,7 @@ namespace WpfHealthBreezeTV
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\n네트워크 연결을 확인해주세요.(01)", "로그인 실패");
+                MessageBox.Show(ex.Source + "\n" + ex.Message + "\n" + ex.StackTrace + "\n네트워크 연결을 확인해주세요.(01)", "로그인 실패");
                 buttonLogin.Content = "로그인";
                 buttonLogin.IsEnabled = true;
                 Mouse.OverrideCursor = null;

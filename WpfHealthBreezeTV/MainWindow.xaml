@@ -78,10 +78,9 @@
             <Grid Background="White">
                 <Grid Height="50" VerticalAlignment="Top" Margin="5, 0, 5, 0">
                     <Grid.ColumnDefinitions>
-                        <!--<ColumnDefinition Width="6*" />
-                        <ColumnDefinition Width="6*" />-->
-                        <ColumnDefinition Width="1*" />
-                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="6*" />
+                        <ColumnDefinition Width="6*" />
+                        <!-- <ColumnDefinition Width="1*" />-->
                     </Grid.ColumnDefinitions>
                     <Button x:Name="buttonPlay" Margin="0, 10, 2.5, 0" Grid.Column="0" Content="시  청" Click="buttonPlay_Click" Height="30" Cursor="Hand" FontSize="16" Background="#FFF0F0F0" Width="170" BorderBrush="#FFACACAC" VerticalAlignment="Top"/>
                     <Button x:Name="buttonDelete" Margin="2.5, 10, 2.5, 0" Grid.Column="1" Content="삭  제" Click="buttonDelete_Click" Height="30" Cursor="Hand" FontSize="16" Background="#FFF0F0F0" Width="170" BorderBrush="#FFACACAC" VerticalAlignment="Top"/>
@@ -89,7 +88,6 @@
                         <Button x:Name="buttonListUp" Content="˄" Height="20" Width="30" Click="buttonListUp_Click" Background="#FFF0F0F0"/>
                         <Button x:Name="buttonListDown" Content="˅" Width="30" Click="buttonListDown_Click" Background="#FFF0F0F0"/>
                     </StackPanel> -->
-                    <!--<Button x:Name="buttonRefresh" Margin="2.5, 0, 0, 0" Grid.Column="2" Content="새로고침" Click="buttonRefresh_Click" Height="35" Cursor="Hand"/>-->
                 </Grid>
                 <ListBox x:Name="listBoxChannel" Margin="5,55,5,5" ScrollViewer.HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch" SelectionMode="Multiple" MouseUp="listBoxChannel_MouseUp" PreviewMouseRightButtonDown="listBox_PreviewMouseRightButtonDown" >
                     <ListBoxItem FontSize="20">
@@ -117,6 +115,7 @@
             </TabItem.Header>
             <Grid Background="White">
                 <Button x:Name="buttonNewUser" Content="사용자 추가" FontSize="16" Click="buttonNewUser_Click" Cursor="Hand" Background="#FFF0F0F0" BorderBrush="#FFACACAC" Width="150" Height="30" Margin="60,50,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                <Button x:Name="buttonChangePassword" Content="비밀번호 변경" FontSize="16" Click="buttonChangePassword_Click" Cursor="Hand" Background="#FFF0F0F0" BorderBrush="#FFACACAC" Width="150" Height="30" Margin="228,50,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
                 <GroupBox x:Name="groupBox" Header="재생 창 설정" HorizontalAlignment="Left" Margin="41,95,0,0" VerticalAlignment="Top" Height="170" Width="353"/>
                 <Button x:Name="buttonSetWindowPosition" Content="재생 위치 선택" Width="150" Height="30" Click="buttonSetWindowPosition_Click" Cursor="Hand" Background="#FFF0F0F0" BorderBrush="#FFACACAC" FontSize="16" Margin="60,213,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
                 <Button x:Name="buttonSetWindowSize" Content="재생 창 미리보기" Width="150" Height="30" Click="buttonSetWindowSize_Click" Cursor="Hand" Background="#FFF0F0F0" BorderBrush="#FFACACAC" FontSize="16" Margin="228,213,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
